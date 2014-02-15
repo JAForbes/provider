@@ -1,0 +1,59 @@
+<html>
+<head>
+	<title>LD27</title>
+	<style>
+		canvas {
+			background-color: #EEEEB8;
+
+		}
+		@font-face {
+			font-family: pixel_font;
+			src: url('./font/pixel_font.ttf');
+		}
+
+		* {
+			font-family: pixel_font;
+			border: 0;
+			margin: 0;
+		}
+		#info{
+			background-color: #DBDBDB;
+			width: 320px;
+			padding-bottom: 20px
+		}
+		.description{
+			background-color: #999;
+			width: 320;
+		}
+	</style>
+	<audio id = 'snd_fire' src="snd/fire.wav" type="audio/wav"></audio>
+	<audio id = 'snd_walk' src="snd/walk.wav" type="audio/wav"></audio>
+	<audio id = 'snd_drum1' src="snd/drum1.wav" type="audio/wav"></audio>
+	<audio id = 'snd_drum2' src="snd/drum2.wav" type="audio/wav"></audio>
+	<audio id = 'snd_drum3' src="snd/drum3.wav" type="audio/wav"></audio>
+	<audio id = 'snd_drum4' src="snd/drum4.wav" type="audio/wav"></audio>
+	<audio id = 'snd_drum5' src="snd/drum5.wav" type="audio/wav"></audio>
+	<audio id = 'snd_drum6' src="snd/drum6.wav" type="audio/wav"></audio>
+</head>
+<body>
+	<div class='description'>
+		<h1>Provider</h1>
+		<p id='dayDisplay'>Day: 1</p>
+	</div>
+	<div id='game'>
+		<canvas id='c' width='320' height='240'></canvas>
+		
+		<div id="info">
+			<p id='familyDisplay'>Family: Starving</p>
+			<p id='youDisplay'>You: Starving</p>
+			<p id='gameDisplay'>You have 2 wives and 2 children.</p>
+			<br>
+			<p id='adviceDisplay'>Swing: (Spacebar), Hunt: (Arrow Keys)</p>
+		</div>
+	</div>
+	<div class='description'>
+		<p> Code and Art by <h4><b>James Forbes<b></h4></p>
+	</div>
+	<script type="text/javascript" src='coffeescript/game.js'></script>
+</body>
+</html>

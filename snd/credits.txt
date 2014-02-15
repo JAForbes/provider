@@ -1,0 +1,10 @@
+I sourced these sounds from freesound.org
+They are all freely available under Creative Commons licence.
+
+drum.wav - http://www.freesound.org/people/loofa/sounds/57140/
+walk.wav - http://www.freesound.org/people/pawsound/sounds/154848/
+fire.wav - http://www.freesound.org/people/tc630/sounds/47835/
+swing1.flac http://www.freesound.org/people/qubodup/sounds/60012/
+swing2.flac http://www.freesound.org/people/qubodup/sounds/60017/
+swing3.flac http://www.freesound.org/people/qubodup/sounds/60013/
+swing4.flac http://www.freesound.org/people/qubodup/sounds/60007/
