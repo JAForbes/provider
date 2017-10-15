@@ -718,7 +718,7 @@ const game = {
 
 		//eslint-disable-next-line no-undef
 		document.getElementById('youDisplay').innerHTML = 
-			'You are #{c.status}'
+			'You are '+c.status
 		//eslint-disable-next-line no-undef
 		document.getElementById('familyDisplay').innerHTML = 
 			'Your family is '+c.family.status
