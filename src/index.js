@@ -638,7 +638,7 @@ const game = {
 
 		if (c.family.children+c.family.adults > 8){
 			con.save()
-			con.translate(v3.x-c.x,v3.y-c.y)
+			con.translate(v3.x-c.character.x,v3.y-c.character.y)
 			con.scale(4,4)
 			v3.update()   
 			con.scale(1,1)
