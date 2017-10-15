@@ -8,6 +8,8 @@ const Keys = {
 	,F: 70
 }
 
+let mute = false
+
 const Util = {
 	distance(p1, p2){
 		const xs = 
@@ -31,8 +33,32 @@ const Util = {
 
 }
 
+const snd = {
+	play(audio){
+		if( !mute ){
+			audio.play()
+		}
+	}
+	,pause(audio){
+		audio.pause()
+	}
+}
+
 // eslint-disable-next-line no-undef
 window.onkeyup = e => {
+	if( e.keyCode == 77 /* M */){
+		mute = !mute
+
+		// eslint-disable-next-line no-undef
+		Array.from(document.querySelectorAll('audio'))
+			.forEach(function(audio){
+				if( mute ){
+					audio.pause()
+				} else {
+					audio.play()
+				}
+			})
+	}
 	delete Keys.DOWN[e.keyCode]
 }
 
@@ -370,24 +396,24 @@ function Hunter(...args){
 				// eslint-disable-next-line no-undef
 				document.getElementById('snd_drum2')
 					.currentTime = 1
-				// eslint-disable-next-line no-undef
-				document.getElementById('snd_drum2')
-					.play()
+				snd.play(
+					// eslint-disable-next-line no-undef
+					document.getElementById('snd_drum2')
+				)
 			} else {
 				// eslint-disable-next-line no-undef
 				document.getElementById('snd_drum2')
 					.currentTime = 1
 				// eslint-disable-next-line no-undef
-				document.getElementById('snd_drum4')
-					.play()
+				snd.play(document.getElementById('snd_drum4'))
 			}
 		} else {
 			// eslint-disable-next-line no-undef
 			document.getElementById('snd_drum2')
 				.currentTime = 1
 			// eslint-disable-next-line no-undef
-			document.getElementById('snd_drum3')
-				.play()
+			snd.play(document.getElementById('snd_drum3'))
+
 		}
 	}
 
@@ -423,7 +449,7 @@ function Hunter(...args){
 
 	function eat(){
 		// eslint-disable-next-line no-undef
-		document.getElementById('snd_drum5').play()
+		snd.play(document.getElementById('snd_drum5'))
 
 		console.log('eat')
 
@@ -438,7 +464,7 @@ function Hunter(...args){
 
 	function feed(){
 		// eslint-disable-next-line no-undef
-		document.getElementById("snd_drum6").play()
+		snd.play(document.getElementById("snd_drum6"))
 
 		family.status = 
 			statuses[statuses.indexOf(status) + 1] || 'healthy'
@@ -509,7 +535,7 @@ function Hunter(...args){
 
 		if (me.action == "walk"){
 			// eslint-disable-next-line no-undef
-			document.getElementById('snd_walk').play()
+			snd.play(document.getElementById('snd_walk'))
 			// eslint-disable-next-line no-undef
 			if (document.getElementById('snd_walk').currentTime>4){
 				// eslint-disable-next-line no-undef
@@ -648,15 +674,17 @@ const game = {
 		// eslint-disable-next-line no-undef
 		const fire = document.getElementById("snd_fire")
 		if(fire.currentTime == 0){
-			fire.play()
+			snd.play(fire)
 		}
 		if(fire.currentTime>8){
 			fire.currentTime = 0
 		}
 
-		const volume = 1-(Util.distance(c,{x:0,y:0})/200)
+		const volume = 1-Math.abs(Util.distance(c.character,{x:0,y:0})/1000)
+		console.log('volume', volume)
 		if( volume > 0 && volume < 1 ){
 			fire.volume = volume
+			console.log('fire.volume', fire.volume)
 		}
 		game.status()
 	}
@@ -671,7 +699,7 @@ const game = {
 			c.day = c.day + 1
 			c.hunger()
 			// eslint-disable-next-line no-undef
-			document.getElementById("snd_drum1").play()
+			snd.play(document.getElementById("snd_drum1"))
 
 			if( c.day % 10 == 0 && c.family.children > 0 ){
 				c.family.adults = c.family.adults + 1
@@ -704,7 +732,7 @@ const game = {
 		// eslint-disable-next-line no-undef
 		game.loopID = setInterval(game.loop, 1000/30)
 		// eslint-disable-next-line no-undef
-		document.getElementById('snd_fire').play()
+		snd.play(document.getElementById('snd_fire'))
 	}
 
 	,status(){
