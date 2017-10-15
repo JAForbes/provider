@@ -534,6 +534,9 @@ function Hunter(...args){
 		,set family(a){
 			return family = a
 		}
+		,set status(a){
+			return status = a
+		}
 		,get status(){
 			return status
 		}
