@@ -681,10 +681,9 @@ const game = {
 		}
 
 		const volume = 1-Math.abs(Util.distance(c.character,{x:0,y:0})/1000)
-		console.log('volume', volume)
+		
 		if( volume > 0 && volume < 1 ){
 			fire.volume = volume
-			console.log('fire.volume', fire.volume)
 		}
 		game.status()
 	}
