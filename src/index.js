@@ -582,6 +582,9 @@ const game = {
 		can.width = can.width
 		con.imageSmoothingEnabled = false
 		con.translate(can.width/2, can.height/2)
+		if( window.innerWidth > 800 ){
+			con.scale(2,2)
+		}
 		
 		if( c.family.children + c.family.adults > 0 ){
 			con.save()
