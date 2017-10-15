@@ -1,6 +1,11 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-	<title>LD27</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	
+	<title>Provider</title>
 	<style>
 		canvas {
 			background-color: #EEEEB8;
@@ -8,7 +13,7 @@
 		}
 		@font-face {
 			font-family: pixel_font;
-			src: url('./font/pixel_font.ttf');
+			src: url('./resources/font/pixel_font.ttf');
 		}
 
 		* {
@@ -26,34 +31,34 @@
 			width: 320;
 		}
 	</style>
-	<audio id = 'snd_fire' src="snd/fire.wav" type="audio/wav"></audio>
-	<audio id = 'snd_walk' src="snd/walk.wav" type="audio/wav"></audio>
-	<audio id = 'snd_drum1' src="snd/drum1.wav" type="audio/wav"></audio>
-	<audio id = 'snd_drum2' src="snd/drum2.wav" type="audio/wav"></audio>
-	<audio id = 'snd_drum3' src="snd/drum3.wav" type="audio/wav"></audio>
-	<audio id = 'snd_drum4' src="snd/drum4.wav" type="audio/wav"></audio>
-	<audio id = 'snd_drum5' src="snd/drum5.wav" type="audio/wav"></audio>
-	<audio id = 'snd_drum6' src="snd/drum6.wav" type="audio/wav"></audio>
+	<audio id = "snd_fire" src="resources/snd/fire.wav" type="audio/wav"></audio>
+	<audio id = "snd_walk" src="resources/snd/walk.wav" type="audio/wav"></audio>
+	<audio id = "snd_drum1" src="resources/snd/drum1.wav" type="audio/wav"></audio>
+	<audio id = "snd_drum2" src="resources/snd/drum2.wav" type="audio/wav"></audio>
+	<audio id = "snd_drum3" src="resources/snd/drum3.wav" type="audio/wav"></audio>
+	<audio id = "snd_drum4" src="resources/snd/drum4.wav" type="audio/wav"></audio>
+	<audio id = "snd_drum5" src="resources/snd/drum5.wav" type="audio/wav"></audio>
+	<audio id = "snd_drum6" src="resources/snd/drum6.wav" type="audio/wav"></audio>
 </head>
 <body>
-	<div class='description'>
+	<div class="description">
 		<h1>Provider</h1>
-		<p id='dayDisplay'>Day: 1</p>
+		<p id="dayDisplay">Day: 1</p>
 	</div>
-	<div id='game'>
-		<canvas id='c' width='320' height='240'></canvas>
+	<div id="game">
+		<canvas id="c" width='320' height='240'></canvas>
 		
 		<div id="info">
-			<p id='familyDisplay'>Family: Starving</p>
-			<p id='youDisplay'>You: Starving</p>
-			<p id='gameDisplay'>You have 2 wives and 2 children.</p>
+			<p id="familyDisplay">Family: Starving</p>
+			<p id="youDisplay">You: Starving</p>
+			<p id="gameDisplay">You have 2 wives and 2 children.</p>
 			<br>
-			<p id='adviceDisplay'>Swing: (Spacebar), Hunt: (Arrow Keys)</p>
+			<p id="adviceDisplay">Swing: (Spacebar), Hunt: (Arrow Keys)</p>
 		</div>
 	</div>
-	<div class='description'>
+	<div class="description">
 		<p> Code and Art by <h4><b>James Forbes<b></h4></p>
 	</div>
-	<script type="text/javascript" src='coffeescript/game.js'></script>
+	<script type="text/javascript" src="game-port.js"></script>
 </body>
 </html>
