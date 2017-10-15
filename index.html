@@ -7,6 +7,9 @@
 	
 	<title>Provider</title>
 	<style>
+		.absolute {
+			position: absolute;
+		}
 		canvas {
 			background-color: #EEEEB8;
 
@@ -41,14 +44,14 @@
 	<audio id = "snd_drum6" src="resources/snd/drum6.wav" type="audio/wav"></audio>
 </head>
 <body>
-	<div class="description">
+	<canvas class="absolute" id="c" width='320' height='240'></canvas>
+	<div class="absolute description" style="margin: 10px; top: 0px; left: 0px; padding: 10px;">
 		<h1>Provider</h1>
 		<p id="dayDisplay">Day: 1</p>
 	</div>
-	<div id="game">
-		<canvas id="c" width='320' height='240'></canvas>
+	<div id="game" class="absolute" style="margin: 10px; bottom: 0px; left: 0px;">
 		
-		<div id="info">
+		<div id="info" style="padding: 10px;">
 			<p id="familyDisplay">Family: Starving</p>
 			<p id="youDisplay">You: Starving</p>
 			<p id="gameDisplay">You have 2 wives and 2 children.</p>
@@ -56,7 +59,7 @@
 			<p id="adviceDisplay">Swing: (Spacebar), Hunt: (Arrow Keys)</p>
 		</div>
 	</div>
-	<div class="description">
+	<div class="description absolute" style="margin: 10px; top: 0px; right: 0px; padding: 10px;">
 		<p> Code and Art by <h4><b>James Forbes<b></h4></p>
 	</div>
 	<script type="text/javascript" src="src/index.js"></script>

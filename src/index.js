@@ -577,6 +577,8 @@ const game = {
 	loopID: undefined
 	,restartID: undefined
 	,loop(){
+		can.width = window.innerWidth
+		can.height = window.innerHeight
 		can.width = can.width
 		con.imageSmoothingEnabled = false
 		con.translate(can.width/2, can.height/2)
@@ -651,7 +653,7 @@ const game = {
 	}
 
 	,night(){
-		can.style.backgroundCOlor = 'rgba(0,0,50,'+timeOfDay+')'
+		can.style.backgroundColor = 'rgba(0,0,50,'+timeOfDay+')'
 		timeOfDay = timeOfDay + increment
 		if( timeOfDay > 1 ){
 			increment = -0.0125
