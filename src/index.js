@@ -534,6 +534,9 @@ function Hunter(...args){
 		,set family(a){
 			return family = a
 		}
+		,get status(){
+			return status
+		}
 		,character: me
 	}
 }
@@ -713,7 +716,7 @@ const game = {
 			} else {
 				//eslint-disable-next-line no-undef
 				document.getElementById('adviceDisplay').innerHTML = 
-					'Feed Family: (F)' 
+					'Feed Village: (F)' 
 			}
 		} else {
 			//eslint-disable-next-line no-undef
@@ -726,11 +729,12 @@ const game = {
 			'You are '+c.status
 		//eslint-disable-next-line no-undef
 		document.getElementById('familyDisplay').innerHTML = 
-			'Your family is '+c.family.status
+			'Your village is '+c.family.status
 		//eslint-disable-next-line no-undef
 		document.getElementById('gameDisplay').innerHTML = 
-			'You have '+c.family.adults+ ' wives and '+c.family.children
-				+' children.  '+c.family.starved+' of your family have starved.'
+			'You have '+c.family.adults+ ' elders and '+c.family.children
+				+' children.  '+c.family.starved
+				+' of your village have starved.'
 		if( !c.character.alive ){
 			//eslint-disable-next-line no-undef
 			document.getElementById('youDisplay').innerHTML = 
