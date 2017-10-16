@@ -428,6 +428,7 @@ function Hunter(...args){
 			if( me.alive ){
 				me.alive = false
 				status = 'dead'
+				// eslint-disable-next-line no-undef, no-console
 				console.log( 'you lasted '+day+' days but you have starved...' )
 			}
 		}
@@ -457,6 +458,7 @@ function Hunter(...args){
 		// eslint-disable-next-line no-undef
 		snd.play(document.getElementById('snd_drum5'))
 
+		// eslint-disable-next-line no-undef, no-console
 		console.log('eat')
 
 		status = 
@@ -611,6 +613,7 @@ const v3 = Element(25,-25,"resources/img/original/elements/villager/idle.png")
 let timeOfDay = 0
 let increment = 0.1
 
+const FRAME_APPROX = 16/1000
 
 function systems$night(){
 	can.style.backgroundColor = 'rgba(0,0,50,'+timeOfDay+')'
@@ -633,6 +636,10 @@ function systems$night(){
 
 const camera = { x:c.character.x, y:c.character.y, target: c.character }
 
+const actors = {
+	d, c
+}
+
 const characters = {
 	f
 	,v
@@ -640,6 +647,60 @@ const characters = {
 	,v3
 	,d:d.character
 	,c:c.character
+}
+
+const spatialSounds = {
+	fire: {
+		// eslint-disable-next-line no-undef	
+		snd: document.querySelector('#snd_fire')
+		,coords: f
+	}
+}
+const loopingSounds = {
+	// eslint-disable-next-line no-undef
+	fire: document.querySelector('#snd_fire')
+}
+
+function systems$sndLoop(){
+	Object.keys(loopingSounds).forEach(function(k){
+		const snd = loopingSounds[k]
+
+		if(snd.currentTime == 0){
+			snd.play(snd)
+		}
+
+		if(
+			snd.duration - snd.currentTime 
+				< snd.duration * FRAME_APPROX * 4 
+		){
+			snd.currentTime = 0
+		}
+		
+	})
+}
+
+function systems$sndSpatial(){
+	Object.keys(spatialSounds).forEach(function(k){
+		const sndObj = spatialSounds[k]	
+		const volume = 
+			1-Math.abs(Util.distance(sndObj.coords,camera)/1000)
+		
+		if( volume > 0 && volume < 1 ){
+			sndObj.snd.volume = volume
+		}
+	})
+}
+	
+
+function systems$prepCanvas(){
+	// eslint-disable-next-line no-undef
+	can.width = window.innerWidth
+	// eslint-disable-next-line no-undef
+	can.height = window.innerHeight
+	can.width = can.width
+	con.imageSmoothingEnabled = false
+	
+	con.translate(can.width/2, can.height/2)
 }
 
 function systems$drawCharacters(){
@@ -667,59 +728,61 @@ function systems$camera(){
 }
 
 
+function system$dpi(){
+	// eslint-disable-next-line no-undef
+	if( window.innerWidth > 800 ){
+		con.scale(2,2)
+	}
+}
+
+function system$act(){
+	Object.keys(actors).forEach(function(k){
+		const other = actors[k]
+
+		Object.keys(actors).forEach(function(k){
+			const me = actors[k]
+
+			if( me != other ){
+				me.act(other)
+			}
+		})
+	})
+}
+
+function system$village(){
+	if( c.family.children + c.family.adults > 0 ){
+		characters.v2 = v2
+	} else {
+		delete characters[v2]
+	}
+
+	if (c.family.children+c.family.adults > 4){
+		characters.v = v
+	} else {
+		delete characters.v
+	}
+
+	if (c.family.children+c.family.adults > 8){
+		characters.v3 = v3
+	} else {
+		delete characters.v3
+	}
+}
+
 const game = {
 	loopID: undefined
 	,restartID: undefined
 	,loop(){
 		systems$camera()
-		can.width = window.innerWidth
-		can.height = window.innerHeight
-		can.width = can.width
-		con.imageSmoothingEnabled = false
-		con.translate(can.width/2, can.height/2)
-		if( window.innerWidth > 800 ){
-			con.scale(2,2)
-		}
-		
-		
-		if( c.family.children + c.family.adults > 0 ){
-			characters.v2 = v2
-		} else {
-			delete characters[v2]
-		}
-
-		if (c.family.children+c.family.adults > 4){
-			characters.v = v
-		} else {
-			delete characters.v
-		}
-
-
-
-		if (c.family.children+c.family.adults > 8){
-			characters.v3 = v3
-		} else {
-			delete characters.v3
-		}
-
-		c.act(d)
-		d.act(c)
-
+		systems$prepCanvas()
+		system$dpi()
+		system$village()
+		system$act()
 		systems$drawCharacters()
-		// eslint-disable-next-line no-undef
-		const fire = document.getElementById("snd_fire")
-		if(fire.currentTime == 0){
-			snd.play(fire)
-		}
-		if(fire.currentTime>8){
-			fire.currentTime = 0
-		}
 
-		const volume = 1-Math.abs(Util.distance(c.character,{x:0,y:0})/1000)
-		
-		if( volume > 0 && volume < 1 ){
-			fire.volume = volume
-		}
+		// eslint-disable-next-line no-undef
+		systems$sndLoop()
+		systems$sndSpatial()
 		game.status()
 	}
 
@@ -727,6 +790,7 @@ const game = {
 		// eslint-disable-next-line
 		clearInterval( game.restartID )
 
+		// eslint-disable-next-line no-undef, no-console
 		console.log('restart', game.restartID)
 
 		c.day = 1
@@ -786,6 +850,7 @@ const game = {
 			document.getElementById('youDisplay').innerHTML = 
 				'You are '+c.status
 		
+			// eslint-disable-next-line no-undef, no-console
 			console.log("loopID",game.loopID)
 			//eslint-disable-next-line no-undef
 			clearInterval(game.loopID)
@@ -799,6 +864,8 @@ const game = {
 	}
 }
 
-
+// eslint-disable-next-line no-undef
 game.loopID = setInterval(game.loop,1000/30)
+
+// eslint-disable-next-line no-undef, no-console
 setInterval(systems$night,62.5)
