@@ -177,7 +177,7 @@ function Character(
 	initSprites()
 	const frame = Frame()
 	let action = 'idle'
-	let speed = 8
+	let speed = 4
 	let alive = true
 	let respawnId
 
@@ -290,6 +290,8 @@ function Deer(...args){
 
 	const me = 
 		Character(...args)
+
+	me.frame.playspeed = 1/8
 
 	let spawnRadius = 5
 
@@ -484,10 +486,10 @@ function Hunter(...args){
 
 	function act(d){
 		const [newSpeed, newPlayspeed] =
-			{ 'healthy': [10, 1/3]
-			, 'peckish': [6, me.frame.playspeed]
-			, 'hungry': [5, 1/4]
-			, 'starving': [3,1/5]
+			{ 'healthy': [5, 1/3]
+			, 'peckish': [3, me.frame.playspeed]
+			, 'hungry': [2.5, 1/4]
+			, 'starving': [1.5,1/5]
 			}[ status ] || [me.speed, me.frame.playspeed]
 
 		me.speed = newSpeed
@@ -669,10 +671,7 @@ function systems$sndLoop(){
 			snd.play(snd)
 		}
 
-		if(
-			snd.duration - snd.currentTime 
-				< snd.duration * FRAME_APPROX * 4 
-		){
+		if( snd.duration - snd.currentTime < snd.duration * FRAME_APPROX * 4 ){
 			snd.currentTime = 0
 		}
 		
@@ -743,7 +742,7 @@ function system$act(){
 			const me = actors[k]
 
 			if( me != other ){
-				me.act(other)
+				me.act(other, delta)
 			}
 		})
 	})
@@ -769,29 +768,35 @@ function system$village(){
 	}
 }
 
+let paused = false
+
+let last = 0
+let delta = 0
 const game = {
-	loopID: undefined
-	,restartID: undefined
-	,loop(){
-		systems$camera()
-		systems$prepCanvas()
-		system$dpi()
-		system$village()
-		system$act()
-		systems$drawCharacters()
+
+	loop(){
+		delta = Date.now - last
+		last = Date.now()
+
+		if( !paused ){
+			systems$camera()
+			systems$prepCanvas()
+			system$dpi()
+			system$village()
+			system$act(delta)
+			systems$drawCharacters()
+	
+			// eslint-disable-next-line no-undef
+			systems$sndLoop()
+			systems$sndSpatial()
+			game.status()
+		}
 
 		// eslint-disable-next-line no-undef
-		systems$sndLoop()
-		systems$sndSpatial()
-		game.status()
+		requestAnimationFrame(game.loop)
 	}
 
 	,restart(){
-		// eslint-disable-next-line
-		clearInterval( game.restartID )
-
-		// eslint-disable-next-line no-undef, no-console
-		console.log('restart', game.restartID)
 
 		c.day = 1
 		c.carrying = false
@@ -802,14 +807,14 @@ const game = {
 			,starved: 0
 		}
 		c.status = 'peckish'
-		c.character.x = 100
-		c.character.y = 40
+		c.character.x = 100 * Util.random() * Util.even()
+		c.character.y = 40 * Util.random() * Util.even()
 		d.character.x = -60
 		d.character.y = -100
 		d.spawnRadius = 5
 		c.character.alive = true
 		// eslint-disable-next-line no-undef
-		game.loopID = setInterval(game.loop, 1000/30)
+		paused = false
 		// eslint-disable-next-line no-undef
 		snd.play(document.getElementById('snd_fire'))
 	}
@@ -837,9 +842,11 @@ const game = {
 		//eslint-disable-next-line no-undef
 		document.getElementById('youDisplay').innerHTML = 
 			'You are '+c.status
+		
 		//eslint-disable-next-line no-undef
 		document.getElementById('familyDisplay').innerHTML = 
 			'Your village is '+c.family.status
+
 		//eslint-disable-next-line no-undef
 		document.getElementById('gameDisplay').innerHTML = 
 			'You have '+c.family.adults+ ' elders and '+c.family.children
@@ -850,22 +857,20 @@ const game = {
 			document.getElementById('youDisplay').innerHTML = 
 				'You are '+c.status
 		
-			// eslint-disable-next-line no-undef, no-console
-			console.log("loopID",game.loopID)
 			//eslint-disable-next-line no-undef
-			clearInterval(game.loopID)
+			paused = true
 			//eslint-disable-next-line no-undef
 			document.getElementById("snd_fire").pause()
 			//eslint-disable-next-line no-undef
 			document.getElementById("snd_walk").pause()
 			//eslint-disable-next-line no-undef
-			game.restartID = setInterval(game.restart,8000)
+			game.restartID = setTimeout(game.restart,8000)
 		}
 	}
 }
 
 // eslint-disable-next-line no-undef
-game.loopID = setInterval(game.loop,1000/30)
+requestAnimationFrame(game.loop)
 
 // eslint-disable-next-line no-undef, no-console
 setInterval(systems$night,62.5)
