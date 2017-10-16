@@ -8,8 +8,9 @@ const Keys = {
 	,F: 70
 }
 
-let mute = false
+let mute = localStorage.getItem('provider.mute') == 'true'
 
+setMute(mute)
 const Util = {
 	distance(p1, p2){
 		const xs = 
@@ -33,7 +34,7 @@ const Util = {
 
 }
 
-const snd = {
+const SND = {
 	play(audio){
 		if( !mute ){
 			audio.play()
@@ -42,29 +43,40 @@ const snd = {
 	,pause(audio){
 		audio.pause()
 	}
+	,volume(audio, x){
+		if(!mute){
+			audio.volume = x
+		}
+	}
+}
+
+function setMute(x){
+	mute = x
+	localStorage.setItem('provider.mute', String(mute))
+	Array.from(document.querySelectorAll('audio'))
+		.forEach(function(audio){
+			if( mute ){
+				audio.volume = 0
+			} else {
+				audio.volume = 1
+			}
+		})
 }
 
 // eslint-disable-next-line no-undef
 window.onkeyup = e => {
 	if( e.keyCode == 77 /* M */){
-		mute = !mute
-
-		// eslint-disable-next-line no-undef
-		Array.from(document.querySelectorAll('audio'))
-			.forEach(function(audio){
-				if( mute ){
-					audio.pause()
-				} else {
-					audio.play()
-				}
-			})
+		
+		setMute(!mute)
 	}
 	delete Keys.DOWN[e.keyCode]
 }
 
 // eslint-disable-next-line no-undef
 window.onkeydown = e => {
-	Keys.DOWN[e.keyCode] = true
+	if( !(e.keyCode in Keys.DOWN) ){
+		Keys.DOWN[e.keyCode] = Date.now()
+	}
 
 	if( e.keyCode > 31 && e.keyCode < 41 ){
 		e.preventDefault()
@@ -91,6 +103,7 @@ function Frame(
 	, repeat=true
 ){
 	playspeed = playspeed * 0.5
+
 	function onload(){
 		count = image.width / image.height
 		// the height of the strip is the width of a frame
@@ -108,28 +121,30 @@ function Frame(
 	}
 
 	function draw(){
-		const sx = 
-			Math.floor(index)*width
-		const sy = 0
-		const sWidth = width
-		const sHeight = width
-		const dx = -width / 2
-		const dy = -width / 2
-		const dWidth = width
-		const dHeight = width
-		
-		con.drawImage(
-			image
-			, sx
-			, sy
-			, sWidth
-			, sHeight
-			, dx
-			, dy
-			, dWidth
-			, dHeight
-		
-		)
+		if( image.complete ){
+			const sx = 
+				Math.floor(index)*width
+			const sy = 0
+			const sWidth = width
+			const sHeight = width
+			const dx = -width / 2
+			const dy = -width / 2
+			const dWidth = width
+			const dHeight = width
+
+			con.drawImage(
+				image
+				, sx
+				, sy
+				, sWidth
+				, sHeight
+				, dx
+				, dy
+				, dWidth
+				, dHeight
+			
+			)
+		}
 	}
 
 	function next(){
@@ -404,7 +419,7 @@ function Hunter(...args){
 				// eslint-disable-next-line no-undef
 				document.getElementById('snd_drum2')
 					.currentTime = 1
-				snd.play(
+				SND.play(
 					// eslint-disable-next-line no-undef
 					document.getElementById('snd_drum2')
 				)
@@ -413,14 +428,14 @@ function Hunter(...args){
 				document.getElementById('snd_drum2')
 					.currentTime = 1
 				// eslint-disable-next-line no-undef
-				snd.play(document.getElementById('snd_drum4'))
+				SND.play(document.getElementById('snd_drum4'))
 			}
 		} else {
 			// eslint-disable-next-line no-undef
 			document.getElementById('snd_drum2')
 				.currentTime = 1
 			// eslint-disable-next-line no-undef
-			snd.play(document.getElementById('snd_drum3'))
+			SND.play(document.getElementById('snd_drum3'))
 
 		}
 	}
@@ -458,7 +473,7 @@ function Hunter(...args){
 
 	function eat(){
 		// eslint-disable-next-line no-undef
-		snd.play(document.getElementById('snd_drum5'))
+		SND.play(document.getElementById('snd_drum5'))
 
 		// eslint-disable-next-line no-undef, no-console
 		console.log('eat')
@@ -474,7 +489,7 @@ function Hunter(...args){
 
 	function feed(){
 		// eslint-disable-next-line no-undef
-		snd.play(document.getElementById("snd_drum6"))
+		SND.play(document.getElementById("snd_drum6"))
 
 		family.status = 
 			statuses[statuses.indexOf(status) + 1] || 'healthy'
@@ -545,7 +560,7 @@ function Hunter(...args){
 
 		if (me.action == "walk"){
 			// eslint-disable-next-line no-undef
-			snd.play(document.getElementById('snd_walk'))
+			SND.play(document.getElementById('snd_walk'))
 			// eslint-disable-next-line no-undef
 			if (document.getElementById('snd_walk').currentTime>4){
 				// eslint-disable-next-line no-undef
@@ -627,7 +642,7 @@ function systems$night(){
 		c.day = c.day + 1
 		c.hunger()
 		// eslint-disable-next-line no-undef
-		snd.play(document.getElementById("snd_drum1"))
+		SND.play(document.getElementById("snd_drum1"))
 
 		if( c.day % 10 == 0 && c.family.children > 0 ){
 			c.family.adults = c.family.adults + 1
@@ -667,11 +682,11 @@ function systems$sndLoop(){
 	Object.keys(loopingSounds).forEach(function(k){
 		const snd = loopingSounds[k]
 
-		if(snd.currentTime == 0){
-			snd.play(snd)
+		if(SND.currentTime == 0){
+			SND.play(snd)
 		}
 
-		if( snd.duration - snd.currentTime < snd.duration * FRAME_APPROX * 4 ){
+		if( snd.currentTime > 8 ){
 			snd.currentTime = 0
 		}
 		
@@ -685,7 +700,7 @@ function systems$sndSpatial(){
 			1-Math.abs(Util.distance(sndObj.coords,camera)/1000)
 		
 		if( volume > 0 && volume < 1 ){
-			sndObj.snd.volume = volume
+			SND.volume(sndObj.snd, volume)
 		}
 	})
 }
@@ -778,6 +793,7 @@ const game = {
 		delta = Date.now - last
 		last = Date.now()
 
+		SND.play(document.getElementById('snd_fire'))
 		if( !paused ){
 			systems$camera()
 			systems$prepCanvas()
@@ -785,8 +801,6 @@ const game = {
 			system$village()
 			system$act(delta)
 			systems$drawCharacters()
-	
-			// eslint-disable-next-line no-undef
 			systems$sndLoop()
 			systems$sndSpatial()
 			game.status()
@@ -816,7 +830,6 @@ const game = {
 		// eslint-disable-next-line no-undef
 		paused = false
 		// eslint-disable-next-line no-undef
-		snd.play(document.getElementById('snd_fire'))
 	}
 
 	,status(){
