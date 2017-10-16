@@ -280,6 +280,9 @@ function Character(
 		,get respawnId(){
 			return respawnId
 		}
+		,get scale(){
+			return 4
+		}
 	}
 }
 
@@ -369,6 +372,9 @@ function Element(x,y,imagePath){
 		}
 		,set y(a){
 			return y = a
+		}
+		,get scale(){
+			return 4
 		}
 	}
 }
@@ -605,10 +611,67 @@ const v3 = Element(25,-25,"resources/img/original/elements/villager/idle.png")
 let timeOfDay = 0
 let increment = 0.1
 
+
+function systems$night(){
+	can.style.backgroundColor = 'rgba(0,0,50,'+timeOfDay+')'
+	timeOfDay = timeOfDay + increment
+	if( timeOfDay > 1 ){
+		increment = -0.0125
+	} else if ( timeOfDay < 0 && c.character.alive ){
+		increment = 0.0125
+		c.day = c.day + 1
+		c.hunger()
+		// eslint-disable-next-line no-undef
+		snd.play(document.getElementById("snd_drum1"))
+
+		if( c.day % 10 == 0 && c.family.children > 0 ){
+			c.family.adults = c.family.adults + 1
+			c.family.children = c.family.children - 1
+		}
+	}
+}
+
+const camera = { x:c.character.x, y:c.character.y, target: c.character }
+
+const characters = {
+	f
+	,v
+	,v2
+	,v3
+	,d:d.character
+	,c:c.character
+}
+
+function systems$drawCharacters(){
+	Object.keys(characters).forEach(function(k){
+		const character = characters[k]
+		con.save()
+		con.translate(character.x-camera.x,character.y-camera.y)
+		con.scale(character.scale, character.scale)
+		if( 'act' in character){
+			character.act(c)
+		}
+		if( 'update' in character ){
+			character.update()
+		}
+		con.scale(1,1)
+		con.restore()
+	})
+}
+
+function systems$camera(){
+	if( Util.distance(camera, c.character) > 10 ){
+		camera.x = camera.x + (camera.target.x - camera.x) * 0.05
+		camera.y = camera.y + (camera.target.y - camera.y) * 0.05
+	}
+}
+
+
 const game = {
 	loopID: undefined
 	,restartID: undefined
 	,loop(){
+		systems$camera()
 		can.width = window.innerWidth
 		can.height = window.innerHeight
 		can.width = can.width
@@ -618,59 +681,31 @@ const game = {
 			con.scale(2,2)
 		}
 		
+		
 		if( c.family.children + c.family.adults > 0 ){
-			con.save()
-			con.translate(v2.x-c.character.x,v2.y-c.character.y)
-			con.scale(4,4)
-			v2.update()
-			con.scale(1,1)
-			con.restore()
+			characters.v2 = v2
+		} else {
+			delete characters[v2]
 		}
 
 		if (c.family.children+c.family.adults > 4){
-			con.save()
-			con.translate(v.x-c.character.x,v.y-c.character.y)
-			con.scale(4,4)
-			v.update()   
-			con.scale(1,1)
-			con.restore()
+			characters.v = v
+		} else {
+			delete characters.v
 		}
+
+
 
 		if (c.family.children+c.family.adults > 8){
-			con.save()
-			con.translate(v3.x-c.character.x,v3.y-c.character.y)
-			con.scale(4,4)
-			v3.update()   
-			con.scale(1,1)
-			con.restore()
+			characters.v3 = v3
+		} else {
+			delete characters.v3
 		}
 
-		
-		//fire
-		con.save()
-		con.translate(f.x-c.character.x,f.y-c.character.y)
-		con.scale(4,4)
-		f.update()
-		con.scale(1,1)
-		con.restore()
-	
-		//deer
-		con.save()
-		con.translate(d.character.x-c.character.x,d.character.y-c.character.y)
-		d.act(c)
-		con.scale(4,4)
-		d.character.update()
-		con.scale(1,1)
-		con.restore()
-	
-
-		//hunter
-		con.save()
 		c.act(d)
-		con.scale(4,4)
-		c.character.update()
-		con.scale(1,1)
-		con.restore()
+		d.act(c)
+
+		systems$drawCharacters()
 		// eslint-disable-next-line no-undef
 		const fire = document.getElementById("snd_fire")
 		if(fire.currentTime == 0){
@@ -686,25 +721,6 @@ const game = {
 			fire.volume = volume
 		}
 		game.status()
-	}
-
-	,night(){
-		can.style.backgroundColor = 'rgba(0,0,50,'+timeOfDay+')'
-		timeOfDay = timeOfDay + increment
-		if( timeOfDay > 1 ){
-			increment = -0.0125
-		} else if ( timeOfDay < 0 && c.character.alive ){
-			increment = 0.0125
-			c.day = c.day + 1
-			c.hunger()
-			// eslint-disable-next-line no-undef
-			snd.play(document.getElementById("snd_drum1"))
-
-			if( c.day % 10 == 0 && c.family.children > 0 ){
-				c.family.adults = c.family.adults + 1
-				c.family.children = c.family.children - 1
-			}
-		}
 	}
 
 	,restart(){
@@ -785,4 +801,4 @@ const game = {
 
 
 game.loopID = setInterval(game.loop,1000/30)
-setInterval(game.night,62.5)
+setInterval(systems$night,62.5)
