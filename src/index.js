@@ -90,7 +90,7 @@ function Frame(
 	, playspeed=1/4
 	, repeat=true
 ){
-
+	playspeed = playspeed * 0.5
 	function onload(){
 		count = image.width / image.height
 		// the height of the strip is the width of a frame
@@ -486,10 +486,10 @@ function Hunter(...args){
 
 	function act(d){
 		const [newSpeed, newPlayspeed] =
-			{ 'healthy': [5, 1/3]
+			{ 'healthy': [5, 1/3 * 0.5]
 			, 'peckish': [3, me.frame.playspeed]
-			, 'hungry': [2.5, 1/4]
-			, 'starving': [1.5,1/5]
+			, 'hungry': [2.5, 1/4 * 0.5]
+			, 'starving': [1.5,1/5 * 0.5]
 			}[ status ] || [me.speed, me.frame.playspeed]
 
 		me.speed = newSpeed
