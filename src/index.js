@@ -64,6 +64,7 @@ const state = {
 			, Verb('die', ['right', 'left'])
 			]
 	}
+	,characters: {}
 }
 
 const Util = {
@@ -350,10 +351,10 @@ function App(state){
 		}
 	}
 
-	function Deer(...args){
+	function Deer(id){
 
-		const me = 	
-			Character.of(...args)
+		const me =
+			state.characters[id]
 
 		Character.initSprites(me)
 
@@ -362,22 +363,28 @@ function App(state){
 		let spawnRadius = 5
 
 		function canSee(character){
+			const them =
+				state.characters[character.id]
+				
 			return (
 				me.position == 'right' 
-				&& me.x < character.character.x  
-				&& character.character.x < me.x + 100
-				&& me.y - 50 < character.character.y
-				&& character.character.y < me.y + 50
+				&& me.x < them.x  
+				&& them.x < me.x + 100
+				&& me.y - 50 < them.y
+				&& them.y < me.y + 50
 
 				|| me.position == 'left'
-				&& me.x > character.character.x
-				&& character.character.x > me.x - 100
-				&& me.y - 50 < character.character.y
-				&& character.character.y < me.y + 50
+				&& me.x > them.x
+				&& them.x > me.x - 100
+				&& me.y - 50 < them.y
+				&& them.y < me.y + 50
 			) 
 		}
 
 		function act(character){
+			const them =
+				state.characters[character.id]
+
 			if( !me.alive ){
 				me.action = 'die'
 				me.frame.repeat = false
@@ -386,7 +393,7 @@ function App(state){
 				me.position = me.position == 'left' ? 'right' : 'left'
 			} else if (
 				me.action == 'run'
-				&& Util.distance(character.character,me) < 150
+				&& Util.distance(them,me) < 150
 			) {
 				me.x = me.x + ( me.position == 'left' ? -1 : 1 ) * me.speed
 			} else if ( me.action == 'run' ){
@@ -417,6 +424,7 @@ function App(state){
 			,act
 			,canSee
 			,character: me
+			,id: 'd'
 		}
 	}  
 
@@ -455,9 +463,8 @@ function App(state){
 		}
 	}
 
-	function Hunter(...args){
-		const me = Character.of(...args)
-		Character.initSprites(me)
+	function Hunter(id){
+
 		const statuses = [ 'starving', 'hungry', 'peckish', 'healthy']
 
 		let day = 0
@@ -471,9 +478,15 @@ function App(state){
 		let status = 'peckish'
 
 		function kill(character){
-			if( Util.distance(me, character.character) < 60 ){
-				if( character.character.alive ){
-					Character.die( character.character, character.respawn )
+			const me =
+				state.characters[id]
+
+			const them =
+				state.characters[character.id]
+
+			if( Util.distance(me, them) < 60 ){
+				if( them.alive ){
+					Character.die( them, character.respawn )
 					carrying = true
 					state.resources.snd.drum2.element
 						.currentTime = 1
@@ -494,6 +507,9 @@ function App(state){
 		}
 
 		function hunger(){
+			const me =
+				state.characters[id]
+
 			if( status == 'starving' ){
 				if( me.alive ){
 					me.alive = false
@@ -555,6 +571,9 @@ function App(state){
 		}
 
 		function act(d){
+			const me =
+				state.characters[id]
+
 			const [newSpeed, newPlayspeed] =
 				{ 'healthy': [5, 1/3 * 0.5]
 				, 'peckish': [3, me.frame.playspeed]
@@ -592,7 +611,7 @@ function App(state){
 				}
 			} else if ( state.Keys.DOWN[Keys.SPACE] ){
 				me.action = 'attack'
-				kill(d)
+				kill( d )
 			} else if ( state.Keys.DOWN[Keys.ARROW_UP] ){
 				me.action = 'walk'
 				me.position = 'back'
@@ -643,25 +662,35 @@ function App(state){
 			,get status(){
 				return status
 			}
-			,character: me
+			,id
 		}
 	}
 
-	const c = 
-		Hunter({
+	state.characters.c =
+		Character.of({
 			name: 'hunter'
 			,verbs: state.verbs.c
 			,x: 100
 			,y: 40
 		})
 
-	const d = 
-		Deer({
+	Character.initSprites( state.characters.c )
+
+	state.characters.d =
+		Character.of({
 			name: 'deer'
 			,verbs: state.verbs.d
 			,x: 60
 			,y: -100
 		})
+
+	Character.initSprites( state.characters.d )
+
+	const c = 
+		Hunter('c')
+
+	const d = 
+		Deer('d')
 
 
 	const f = 
@@ -680,7 +709,7 @@ function App(state){
 		timeOfDay = timeOfDay + increment
 		if( timeOfDay > 1 ){
 			increment = -0.0125
-		} else if ( timeOfDay < 0 && c.character.alive ){
+		} else if ( timeOfDay < 0 && state.characters[c.id].alive ){
 			increment = 0.0125
 			c.day = c.day + 1
 			c.hunger()
@@ -755,7 +784,7 @@ function App(state){
 	}
 
 	function systems$camera(){
-		if( Util.distance(camera, c.character) > 10 ){
+		if( Util.distance(camera, state.characters[c.id]) > 10 ){
 			camera.x = camera.x + (camera.target.x - camera.x) * 0.05
 			camera.y = camera.y + (camera.target.y - camera.y) * 0.05
 		}
@@ -899,7 +928,7 @@ function App(state){
 
 			// eslint-disable-next-line no-undef
 			SND.play( state.resources.snd.fire.element )
-			
+
 			if( !paused ){
 				systems$camera()
 				systems$prepCanvas()
@@ -918,7 +947,7 @@ function App(state){
 		}
 
 		,status(){
-			if( !c.character.alive ){
+			if( !state.characters[c.id].alive ){
 		
 				//eslint-disable-next-line no-undef
 				paused = true
@@ -942,12 +971,12 @@ function App(state){
 				,starved: 0
 			}
 			c.status = 'peckish'
-			c.character.x = 100 * Util.random() * Util.even()
-			c.character.y = 40 * Util.random() * Util.even()
+			state.characters[c.id].x = 100 * Util.random() * Util.even()
+			state.characters[c.id].y = 40 * Util.random() * Util.even()
 			d.character.x = -60
 			d.character.y = -100
 			d.spawnRadius = 5
-			c.character.alive = true
+			state.characters[c.id].alive = true
 			// eslint-disable-next-line no-undef
 			paused = false
 			// eslint-disable-next-line no-undef
@@ -958,7 +987,11 @@ function App(state){
 	systems$initAudioResources()
 	systems$ui()
 
-	const camera = { x:c.character.x, y:c.character.y, target: c.character }
+	let camera = 
+		{ x:state.characters[c.id].x
+		, y:state.characters[c.id].y
+		, target: state.characters[c.id] 
+		}
 
 	const actors = {
 		d, c
@@ -970,7 +1003,7 @@ function App(state){
 		,v2
 		,v3
 		,d:d.character
-		,c:c.character
+		,c:state.characters[c.id]
 	}
 
 	const spatialSounds = {
