@@ -1,7 +1,7 @@
 {
   "name": "provider",
   "version": "0.0.0",
-  "description": "Provider ========",
+  "description": "Provider",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,7 +11,7 @@
     "url": "git+https://github.com/JAForbes/provider.git"
   },
   "author": "james.a.forbes@gmail.com <=> (http://james-forbes.com)",
-  "license": "ISC",
+  "license": "UNLICENCED",
   "bugs": {
     "url": "https://github.com/JAForbes/provider/issues"
   },
@@ -22,5 +22,6 @@
   },
   "devDependencies": {
     "eslint": "^4.9.0"
-  }
+  },
+  "private": true
 }
