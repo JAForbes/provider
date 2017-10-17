@@ -237,26 +237,30 @@ function App(state){
 		}
 	}
 
-	function Character(
-		name
-		,verbs
-		,x=0
-		,y=0
-	){
-		let position
-		let idles = {}
-		let imageId
-		
-		initSprites()
-		const frame = Frame.of()
-		let action = 'idle'
-		let speed = 4
-		let alive = true
-		let respawnId
+	const Character = {
+		of({ name, verbs, x, y }){
+			
+			return { 
+				name
+				, verbs
+				, x
+				, y
+				, imageId: null 
+				, position: null
+				, idles: {}
+				, speed: 4
+				, scale: 4
+				, frame: Frame.of()
+				, action: 'idle'
+				, alive: true
+				, respawnId: null
+			}
+		}
 
-		function initSprites(){
+		,initSprites( character ){
+
 			let positions = []
-			for( let verb of verbs ){
+			for( let verb of character.verbs ){
 				for( let position of verb.positions ){
 
 					// eslint-disable-next-line no-undef
@@ -264,7 +268,7 @@ function App(state){
 
 					const src =
 						'resources/img/original/characters/'
-							+ name
+							+ character.name
 							+ '/'+position
 							+ '_'+verb.name+'.png'
 
@@ -290,12 +294,12 @@ function App(state){
 
 				const src =
 					'resources/img/original/characters/'
-						+ name
+						+ character.name
 						+ '/'+position
 						+ '_idle.png'
 
 				image.src = src
-				idles[position] = src
+				character.idles[position] = src
 
 				state.resources.img[src] = {
 					element:image
@@ -304,13 +308,14 @@ function App(state){
 
 			}
 
-			position = positions[0]
+			character.position = positions[0]
+		
 		}
 
-		function die(respawn){
-			if( alive ){
-				alive = false 
-				respawnId = 
+		,die(character, respawn){
+			if( character.alive ){
+				character.alive = false 
+				character.respawnId = 
 					// eslint-disable-next-line no-undef
 					setInterval(
 						respawn
@@ -319,65 +324,28 @@ function App(state){
 			}
 		}
 
-		function update(){
-			for( let verb of verbs ){
+		,update(o){
+			for( let verb of o.verbs ){
 				if( 
-					action == verb.name 
-					&& verb.positions.indexOf(position) > -1 
+					o.action == verb.name 
+					&& verb.positions.indexOf(o.position) > -1 
 				){
-					if( !(imageId == verb.images[position]) ){
-						imageId = verb.images[position]
-						Frame.reset(frame, verb.images[position])
+					if( !(o.imageId == verb.images[o.position]) ){
+						o.imageId = verb.images[o.position]
+						Frame.reset(o.frame, verb.images[o.position])
 					}
 					break
 				}
 			}
 
-			if( action != 'idle' ){
-				Frame.next(frame)
+			if( o.action != 'idle' ){
+				Frame.next(o.frame)
 			} else {
-				if( imageId != idles[position] ){
-					imageId = idles[position]
-					Frame.reset(frame, idles[position])
+				if( o.imageId != o.idles[o.position] ){
+					o.imageId = o.idles[o.position]
+					Frame.reset(o.frame, o.idles[o.position])
 				}
-				Frame.next(frame)
-			}
-		}
-
-		return {
-			update
-			,die
-			,frame
-			,get x(){ return x }
-			,set x(a){
-				return x = a
-			}
-			,get alive(){ return alive }
-			,set alive(a){
-				return alive = a
-			}
-			,get y(){ return y }
-			,set y(a){
-				return y = a
-			}
-			,get speed(){ return speed }
-			,set speed(a){
-				return speed = a
-			}
-			
-			,get action(){ return action }
-			,set action(a){
-				return action = a
-			}
-			,get position(){ return position }
-			,set position(a){
-				return position = a
-			}
-			,get respawnId(){
-				return respawnId
-			}
-			,get scale(){
-				return 4
+				Frame.next(o.frame)
 			}
 		}
 	}
@@ -385,7 +353,9 @@ function App(state){
 	function Deer(...args){
 
 		const me = 	
-			Character(...args)
+			Character.of(...args)
+
+		Character.initSprites(me)
 
 		me.frame.playspeed = 1/8
 
@@ -451,6 +421,7 @@ function App(state){
 	}  
 
 	function Element(x,y,src){
+
 		const frame = Frame.of()
 		// eslint-disable-next-line no-undef
 		const image = new Image()
@@ -485,8 +456,8 @@ function App(state){
 	}
 
 	function Hunter(...args){
-		const me = Character(...args)
-		
+		const me = Character.of(...args)
+		Character.initSprites(me)
 		const statuses = [ 'starving', 'hungry', 'peckish', 'healthy']
 
 		let day = 0
@@ -502,7 +473,7 @@ function App(state){
 		function kill(character){
 			if( Util.distance(me, character.character) < 60 ){
 				if( character.character.alive ){
-					character.character.die(character.respawn)
+					Character.die( character.character, character.respawn )
 					carrying = true
 					state.resources.snd.drum2.element
 						.currentTime = 1
@@ -677,20 +648,20 @@ function App(state){
 	}
 
 	const c = 
-		Hunter(
-			'hunter'
-			,state.verbs.c
-			,100
-			,40
-		)
+		Hunter({
+			name: 'hunter'
+			,verbs: state.verbs.c
+			,x: 100
+			,y: 40
+		})
 
 	const d = 
-		Deer(
-			'deer'
-			,state.verbs.d
-			,60
-			,-100
-		)
+		Deer({
+			name: 'deer'
+			,verbs: state.verbs.d
+			,x: 60
+			,y: -100
+		})
 
 
 	const f = 
@@ -771,10 +742,12 @@ function App(state){
 			con.translate(character.x-camera.x,character.y-camera.y)
 			con.scale(character.scale, character.scale)
 			if( 'act' in character){
-				character.act(c)
+				character.act()
 			}
 			if( 'update' in character ){
 				character.update()
+			} else {
+				Character.update(character)
 			}
 			con.scale(1,1)
 			con.restore()
