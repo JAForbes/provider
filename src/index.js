@@ -892,10 +892,7 @@ const game = {
 
 	,status(){
 		if( !c.character.alive ){
-			//eslint-disable-next-line no-undef
-			document.getElementById('youDisplay').innerHTML = 
-				
-		
+	
 			//eslint-disable-next-line no-undef
 			paused = true
 
