@@ -1,6 +1,8 @@
+/* globals m */
+
+// @ts-check
 const Keys = {
-	DOWN: []
-	,ARROW_RIGHT: 39
+	ARROW_RIGHT: 39
 	,ARROW_DOWN: 40
 	,ARROW_UP: 38
 	,ARROW_LEFT: 37
@@ -8,9 +10,37 @@ const Keys = {
 	,F: 70
 }
 
-let mute = localStorage.getItem('provider.mute') == 'true'
 
-setMute(mute)
+const LocalStorage = {
+	set(k, v){
+		// eslint-disable-next-line no-undef
+		return localStorage.setItem(k, v)
+	}
+	,get(k){
+		// eslint-disable-next-line no-undef
+		return localStorage.getItem(k)
+	}
+}
+
+const state = {
+	Keys: {
+		DOWN: []
+	}
+	,mute: LocalStorage.get('provider.mute') == 'true'
+	,resources: {
+		snd: {
+			fire: { src: 'resources/snd/fire.wav', element: null }
+			,walk: { src: 'resources/snd/walk.wav', element: null }
+			,drum1: { src: 'resources/snd/drum1.wav', element: null }
+			,drum2: { src: 'resources/snd/drum2.wav', element: null }
+			,drum3: { src: 'resources/snd/drum3.wav', element: null }
+			,drum4: { src: 'resources/snd/drum4.wav', element: null }
+			,drum5: { src: 'resources/snd/drum5.wav', element: null }
+			,drum6: { src: 'resources/snd/drum6.wav', element: null }
+		}
+	}
+}
+
 const Util = {
 	distance(p1, p2){
 		const xs = 
@@ -36,7 +66,7 @@ const Util = {
 
 const SND = {
 	play(audio){
-		if( !mute ){
+		if( !state.mute ){
 			audio.play()
 		}
 	}
@@ -44,22 +74,29 @@ const SND = {
 		audio.pause()
 	}
 	,volume(audio, x){
-		if(!mute){
+		if(!state.mute){
 			audio.volume = x
 		}
 	}
 }
 
+setMute(state.mute)
+
 function setMute(x){
-	mute = x
-	localStorage.setItem('provider.mute', String(mute))
-	Array.from(document.querySelectorAll('audio'))
-		.forEach(function(audio){
-			if( mute ){
-				audio.volume = 0
+	state.mute = x
+	LocalStorage.set('provider.mute', String(state.mute))
+	// eslint-disable-next-line no-undef
+	Object.keys(state.resources.snd)
+		.map(function(k){
+			return state.resources.snd[k]
+		})
+		.filter( o => o.element )
+		.forEach(function(o){
+			if( state.mute ){
+				o.element.volume = 0
 			} else {
-				audio.volume = 1
-			}
+				o.element.volume = 1
+			}	
 		})
 }
 
@@ -67,24 +104,22 @@ function setMute(x){
 window.onkeyup = e => {
 	if( e.keyCode == 77 /* M */){
 		
-		setMute(!mute)
+		setMute(!state.mute)
 	}
-	delete Keys.DOWN[e.keyCode]
+	delete state.Keys.DOWN[e.keyCode]
 }
 
 // eslint-disable-next-line no-undef
 window.onkeydown = e => {
-	if( !(e.keyCode in Keys.DOWN) ){
-		Keys.DOWN[e.keyCode] = Date.now()
+	if( !(e.keyCode in state.Keys.DOWN) ){
+		state.Keys.DOWN[e.keyCode] = Date.now()
 	}
 
 	if( e.keyCode > 31 && e.keyCode < 41 ){
 		e.preventDefault()
 	}
 }
-// eslint-disable-next-line no-undef
-const can = document.getElementById('c')
-const con = can.getContext('2d')
+
 
 function Verb(name, positions){
 	return {
@@ -416,26 +451,20 @@ function Hunter(...args){
 			if( character.character.alive ){
 				character.character.die(character.respawn)
 				carrying = true
-				// eslint-disable-next-line no-undef
-				document.getElementById('snd_drum2')
+				state.resources.snd.drum2.element
 					.currentTime = 1
 				SND.play(
-					// eslint-disable-next-line no-undef
-					document.getElementById('snd_drum2')
+					state.resources.snd.drum2.element
 				)
 			} else {
-				// eslint-disable-next-line no-undef
-				document.getElementById('snd_drum2')
+				state.resources.snd.drum2.element
 					.currentTime = 1
-				// eslint-disable-next-line no-undef
-				SND.play(document.getElementById('snd_drum4'))
+				SND.play(state.resources.snd.drum4.element)
 			}
 		} else {
-			// eslint-disable-next-line no-undef
-			document.getElementById('snd_drum2')
+			state.resources.snd.drum2.element
 				.currentTime = 1
-			// eslint-disable-next-line no-undef
-			SND.play(document.getElementById('snd_drum3'))
+			SND.play(state.resources.snd.drum3.element)
 
 		}
 	}
@@ -472,8 +501,8 @@ function Hunter(...args){
 	}
 
 	function eat(){
-		// eslint-disable-next-line no-undef
-		SND.play(document.getElementById('snd_drum5'))
+		
+		SND.play(state.resources.snd.drum5.element)
 
 		// eslint-disable-next-line no-undef, no-console
 		console.log('eat')
@@ -488,8 +517,8 @@ function Hunter(...args){
 	}
 
 	function feed(){
-		// eslint-disable-next-line no-undef
-		SND.play(document.getElementById("snd_drum6"))
+		
+		SND.play(state.resources.snd.drum6.element)
 
 		family.status = 
 			statuses[statuses.indexOf(status) + 1] || 'healthy'
@@ -513,19 +542,19 @@ function Hunter(...args){
 
 		if( carrying ){
 			me.action = 'carry'
-			if (Keys.DOWN[Keys.ARROW_UP] ){
+			if (state.Keys.DOWN[Keys.ARROW_UP] ){
 				me.position = "back"
 				me.y = me.y-1*me.speed
-			} else if (Keys.DOWN[Keys.ARROW_DOWN]) {
+			} else if (state.Keys.DOWN[Keys.ARROW_DOWN]) {
 				me.position = "front"
 				me.y= me.y + 1*me.speed
-			} else if ( Keys.DOWN[Keys.ARROW_LEFT] ){
+			} else if ( state.Keys.DOWN[Keys.ARROW_LEFT] ){
 				me.position = "left"
 				me.x= me.x-1*me.speed
-			} else if ( Keys.DOWN[Keys.ARROW_RIGHT] ){
+			} else if ( state.Keys.DOWN[Keys.ARROW_RIGHT] ){
 				me.position = "right"
 				me.x= me.x + 1*me.speed
-			} else if (Keys.DOWN[Keys.F]){
+			} else if (state.Keys.DOWN[Keys.F]){
 
 				me.action = "walk"
 				carrying = false
@@ -535,22 +564,22 @@ function Hunter(...args){
 					eat()
 				}
 			}
-		} else if ( Keys.DOWN[Keys.SPACE] ){
+		} else if ( state.Keys.DOWN[Keys.SPACE] ){
 			me.action = 'attack'
 			kill(d)
-		} else if ( Keys.DOWN[Keys.ARROW_UP] ){
+		} else if ( state.Keys.DOWN[Keys.ARROW_UP] ){
 			me.action = 'walk'
 			me.position = 'back'
 			me.y = me.y - 1 * me.speed
-		} else if ( Keys.DOWN[Keys.ARROW_DOWN] ){
+		} else if ( state.Keys.DOWN[Keys.ARROW_DOWN] ){
 			me.action = 'walk'
 			me.position = 'front'
 			me.y = me.y  +  1 * me.speed
-		} else if ( Keys.DOWN[Keys.ARROW_LEFT] ){
+		} else if ( state.Keys.DOWN[Keys.ARROW_LEFT] ){
 			me.action = 'walk'
 			me.position = 'left'
 			me.x = me.x - 1 * me.speed
-		} else if ( Keys.DOWN[Keys.ARROW_RIGHT] ){
+		} else if ( state.Keys.DOWN[Keys.ARROW_RIGHT] ){
 			me.action = 'walk'
 			me.position = 'right'
 			me.x = me.x  +  1 * me.speed
@@ -559,16 +588,13 @@ function Hunter(...args){
 		}
 
 		if (me.action == "walk"){
-			// eslint-disable-next-line no-undef
-			SND.play(document.getElementById('snd_walk'))
-			// eslint-disable-next-line no-undef
-			if (document.getElementById('snd_walk').currentTime>4){
-				// eslint-disable-next-line no-undef
-				document.getElementById('snd_walk').currentTime = 0
+			
+			SND.play(state.resources.snd.walk.element)
+			if (state.resources.snd.walk.element.currentTime>4){
+				state.resources.snd.walk.element.currentTime = 0
 			}
 		} else {
-			// eslint-disable-next-line no-undef
-			document.getElementById('snd_walk').pause()  
+			state.resources.snd.walk.element.pause()  
 		}
 	}
 
@@ -595,8 +621,6 @@ function Hunter(...args){
 	}
 }
 
-
-//eslint-disable-next-line no-undef
 const c = 
 	Hunter(
 		'hunter'
@@ -630,10 +654,7 @@ const v3 = Element(25,-25,"resources/img/original/elements/villager/idle.png")
 let timeOfDay = 0
 let increment = 0.1
 
-const FRAME_APPROX = 16/1000
-
 function systems$night(){
-	can.style.backgroundColor = 'rgba(0,0,50,'+timeOfDay+')'
 	timeOfDay = timeOfDay + increment
 	if( timeOfDay > 1 ){
 		increment = -0.0125
@@ -641,41 +662,14 @@ function systems$night(){
 		increment = 0.0125
 		c.day = c.day + 1
 		c.hunger()
-		// eslint-disable-next-line no-undef
-		SND.play(document.getElementById("snd_drum1"))
+		
+		SND.play( state.resources.snd.drum1.element )
 
 		if( c.day % 10 == 0 && c.family.children > 0 ){
 			c.family.adults = c.family.adults + 1
 			c.family.children = c.family.children - 1
 		}
 	}
-}
-
-const camera = { x:c.character.x, y:c.character.y, target: c.character }
-
-const actors = {
-	d, c
-}
-
-const characters = {
-	f
-	,v
-	,v2
-	,v3
-	,d:d.character
-	,c:c.character
-}
-
-const spatialSounds = {
-	fire: {
-		// eslint-disable-next-line no-undef	
-		snd: document.querySelector('#snd_fire')
-		,coords: f
-	}
-}
-const loopingSounds = {
-	// eslint-disable-next-line no-undef
-	fire: document.querySelector('#snd_fire')
 }
 
 function systems$sndLoop(){
@@ -707,10 +701,12 @@ function systems$sndSpatial(){
 	
 
 function systems$prepCanvas(){
+	
 	// eslint-disable-next-line no-undef
 	can.width = window.innerWidth
 	// eslint-disable-next-line no-undef
 	can.height = window.innerHeight
+	
 	can.width = can.width
 	con.imageSmoothingEnabled = false
 	
@@ -757,7 +753,7 @@ function system$act(){
 			const me = actors[k]
 
 			if( me != other ){
-				me.act(other, delta)
+				me.act(other)
 			}
 		})
 	})
@@ -783,31 +779,132 @@ function system$village(){
 	}
 }
 
+
+function systems$initAudioResources(){
+	
+	Object.keys(state.resources.snd)
+		.forEach(function(id){
+			const o = state.resources.snd[id]
+
+			// eslint-disable-next-line no-undef
+			o.element = new Audio()
+			o.element.src = o.src
+		})
+}
+
+function systems$ui(){
+
+	m.render(
+		// eslint-disable-next-line no-undef
+		document.body
+		,m('div'
+			,m('canvas.absolute#c'
+				,{ style:
+					{ backgroundColor: 'rgba(0,0,50,'+timeOfDay+')'
+					}
+				}
+			)
+			,m('.absolute.description'
+				,{ style:
+					{ margin: '10px'
+					, top: '0px'
+					, left: '0px'
+					, padding: '10px'
+					}
+				}
+				,m('h1', 'Provider')
+				,m('p#dayDisplay', 'Day: '+c.day || 1)
+			)
+			,m('#game.absolute'
+				,{ style:
+					{ margin: '10px'
+					, bottom: '0px'
+					, left: '0px'
+					}
+				}
+				,m('#info'
+					,{ style:
+						{ padding: '10px' 
+						}
+					}
+					,m('p#familyDisplay'
+						, 'Your village is '+c.family.status
+					)
+					,m('p#youDisplay'
+						, 'You are '+c.status
+					)
+					,m('p#gameDisplay'
+						,'You have '
+							+ c.family.adults+ ' elders and '+c.family.children
+							+ ' children.  '+c.family.starved
+							+ ' of your village have starved.'
+					)
+					,m('br')
+					,m('p#adviceDisplay'
+						, c.carrying
+						? Util.distance(c,{x:0,y:0}) > 75
+							? 'Eat: (F)'
+							: 'Feed Village: (F)'
+						: 'Swing: (Spacebar), Hunt: (Arrow Keys)'
+					)
+				)
+			)
+			,m('.description.absolute'
+				,{ style:
+					{ margin: '10px'
+					, top: '0px'
+					, right: '0px'
+					, padding: '10px'
+					}
+				}
+				,m('p', 'Code and Art by',m('h4', m('b', 'James Forbes')))
+			)
+		)
+	)
+
+}
+
 let paused = false
 
-let last = 0
-let delta = 0
 const game = {
 
 	loop(){
-		delta = Date.now - last
-		last = Date.now()
 
-		SND.play(document.getElementById('snd_fire'))
+		// eslint-disable-next-line no-undef
+		SND.play( state.resources.snd.fire.element )
+		
 		if( !paused ){
 			systems$camera()
 			systems$prepCanvas()
 			system$dpi()
 			system$village()
-			system$act(delta)
+			system$act()
 			systems$drawCharacters()
 			systems$sndLoop()
 			systems$sndSpatial()
+			systems$ui()
 			game.status()
 		}
 
 		// eslint-disable-next-line no-undef
 		requestAnimationFrame(game.loop)
+	}
+
+	,status(){
+		if( !c.character.alive ){
+			//eslint-disable-next-line no-undef
+			document.getElementById('youDisplay').innerHTML = 
+				
+		
+			//eslint-disable-next-line no-undef
+			paused = true
+
+			SND.pause( state.resources.snd.fire.element )
+			SND.pause( state.resources.snd.walk.element )
+			
+			//eslint-disable-next-line no-undef
+			game.restartID = setTimeout(game.restart,8000)
+		}
 	}
 
 	,restart(){
@@ -831,59 +928,44 @@ const game = {
 		paused = false
 		// eslint-disable-next-line no-undef
 	}
+}
 
-	,status(){
-		//eslint-disable-next-line no-undef
-		document.getElementById('dayDisplay').innerHTML = 'Day: '+c.day
-		if (c.carrying){
+systems$initAudioResources()
+systems$ui()
 
-			if (Util.distance(c,{x:0,y:0})>75){
-				//eslint-disable-next-line no-undef
-				document.getElementById('adviceDisplay').innerHTML = 
-					'Eat: (F)'
-			} else {
-				//eslint-disable-next-line no-undef
-				document.getElementById('adviceDisplay').innerHTML = 
-					'Feed Village: (F)' 
-			}
-		} else {
-			//eslint-disable-next-line no-undef
-			document.getElementById('adviceDisplay').innerHTML = 
-				'Swing: (Spacebar), Hunt: (Arrow Keys)'
-		}
+const camera = { x:c.character.x, y:c.character.y, target: c.character }
 
-		//eslint-disable-next-line no-undef
-		document.getElementById('youDisplay').innerHTML = 
-			'You are '+c.status
+const actors = {
+	d, c
+}
+
+const characters = {
+	f
+	,v
+	,v2
+	,v3
+	,d:d.character
+	,c:c.character
+}
+
+const spatialSounds = {
+	fire: {
 		
-		//eslint-disable-next-line no-undef
-		document.getElementById('familyDisplay').innerHTML = 
-			'Your village is '+c.family.status
-
-		//eslint-disable-next-line no-undef
-		document.getElementById('gameDisplay').innerHTML = 
-			'You have '+c.family.adults+ ' elders and '+c.family.children
-				+' children.  '+c.family.starved
-				+' of your village have starved.'
-		if( !c.character.alive ){
-			//eslint-disable-next-line no-undef
-			document.getElementById('youDisplay').innerHTML = 
-				'You are '+c.status
-		
-			//eslint-disable-next-line no-undef
-			paused = true
-			//eslint-disable-next-line no-undef
-			document.getElementById("snd_fire").pause()
-			//eslint-disable-next-line no-undef
-			document.getElementById("snd_walk").pause()
-			//eslint-disable-next-line no-undef
-			game.restartID = setTimeout(game.restart,8000)
-		}
+		snd: state.resources.snd.fire.element
+		,coords: f
 	}
 }
+const loopingSounds = {
+	
+	fire: state.resources.snd.fire.element
+}
+
+// eslint-disable-next-line no-undef
+const can = document.getElementById('c')
+const con = can.getContext('2d')
 
 // eslint-disable-next-line no-undef
 requestAnimationFrame(game.loop)
 
-// eslint-disable-next-line no-undef, no-console
+// eslint-disable-next-line no-undef
 setInterval(systems$night,62.5)
