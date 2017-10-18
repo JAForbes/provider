@@ -71,6 +71,9 @@ const state = {
 		, scale: { x: 1, y: 1 }
 		, target: null
 	}
+	,hunter: {}
+	,deer: {}
+
 }
 
 const Util = {
@@ -421,8 +424,12 @@ function App(state){
 		}
 
 		,system(){
+
+			const c = state.hunter.c
+			const d = state.deer.d
+
 			const me = state.characters[d.id]
-	
+
 			Deer.act(d, c)
 			
 			if( me.alive == false && d.respawnId == null ) {
@@ -639,7 +646,7 @@ function App(state){
 				}
 			} else if ( state.keys.DOWN[Keys.SPACE] ){
 				me.action = 'attack'
-				Hunter.kill( hunter, d )
+				Hunter.kill( hunter, state.deer.d )
 			} else if ( state.keys.DOWN[Keys.ARROW_UP] ){
 				me.action = 'walk'
 				me.position = 'back'
@@ -672,16 +679,12 @@ function App(state){
 		}
 
 		,system(){
-			return Hunter.act(c, d)
+			return Hunter.act(state.hunter.c, state.hunter.d)
 		}
 	}
 
-	const c = 
-		Hunter.of('c')
-
-	const d = 
-		Deer.of('d')
-
+	state.hunter.c = Hunter.of('c')
+	state.deer.d = Deer.of('d')
 
 	const f = 
 		Element(0,0,"resources/img/original/elements/fire/idle.png")
@@ -723,6 +726,7 @@ function App(state){
 	let increment = 0.1
 
 	function systems$night(){
+		const c = state.hunter.c
 		timeOfDay = timeOfDay + increment
 		if( timeOfDay > 1 ){
 			increment = -0.0125
@@ -800,6 +804,7 @@ function App(state){
 
 	function systems$camera(){
 		const target = state.characters[ state.camera.target ]
+		const c = state.hunter.c
 		if( Util.distance(state.camera, state.characters[c.id]) > 10 ){
 			state.camera.x = state.camera.x + (target.x - state.camera.x) * 0.05
 			state.camera.y = state.camera.y + (target.y - state.camera.y) * 0.05
@@ -816,6 +821,7 @@ function App(state){
 	}
 
 	function system$village(){
+		const c = state.hunter.c
 		if( c.family.children + c.family.adults > 0 ){
 			state.characters.v2 = v2
 		} else {
@@ -851,6 +857,7 @@ function App(state){
 	}
 
 	function systems$ui(){
+		const c = state.hunter.c
 
 		m.render(
 			// eslint-disable-next-line no-undef
@@ -934,6 +941,7 @@ function App(state){
 			// eslint-disable-next-line no-undef
 			SND.play( state.resources.snd.fire.element )
 
+			const c = state.hunter.c
 			state.camera.target = c.id
 
 			if( !paused ){
@@ -955,6 +963,7 @@ function App(state){
 		}
 
 		,status(){
+			const c = state.hunter.c
 			if( !state.characters[c.id].alive ){
 		
 				//eslint-disable-next-line no-undef
@@ -969,6 +978,8 @@ function App(state){
 		}
 
 		,restart(){
+			const c = state.hunter.c
+			const d = state.deer.d
 
 			c.day = 1
 			c.carrying = false
