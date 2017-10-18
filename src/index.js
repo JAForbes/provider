@@ -32,7 +32,7 @@ function Verb(name, positions){
 }
 
 const state = {
-	Keys: {
+	keys: {
 		DOWN: {}
 	}
 	,mute: LocalStorage.get('provider.mute') == 'true'
@@ -134,13 +134,13 @@ function App(state){
 			
 			setMute(!state.mute)
 		}
-		delete state.Keys.DOWN[e.keyCode]
+		delete state.keys.DOWN[e.keyCode]
 	}
 
 	// eslint-disable-next-line no-undef
 	window.onkeydown = e => {
-		if( !(e.keyCode in state.Keys.DOWN) ){
-			state.Keys.DOWN[e.keyCode] = Date.now()
+		if( !(e.keyCode in state.keys.DOWN) ){
+			state.keys.DOWN[e.keyCode] = Date.now()
 		}
 
 		if( e.keyCode > 31 && e.keyCode < 41 ){
@@ -594,19 +594,19 @@ function App(state){
 
 			if( carrying ){
 				me.action = 'carry'
-				if (state.Keys.DOWN[Keys.ARROW_UP] ){
+				if (state.keys.DOWN[Keys.ARROW_UP] ){
 					me.position = "back"
 					me.y = me.y-1*me.speed
-				} else if (state.Keys.DOWN[Keys.ARROW_DOWN]) {
+				} else if (state.keys.DOWN[Keys.ARROW_DOWN]) {
 					me.position = "front"
 					me.y= me.y + 1*me.speed
-				} else if ( state.Keys.DOWN[Keys.ARROW_LEFT] ){
+				} else if ( state.keys.DOWN[Keys.ARROW_LEFT] ){
 					me.position = "left"
 					me.x= me.x-1*me.speed
-				} else if ( state.Keys.DOWN[Keys.ARROW_RIGHT] ){
+				} else if ( state.keys.DOWN[Keys.ARROW_RIGHT] ){
 					me.position = "right"
 					me.x= me.x + 1*me.speed
-				} else if (state.Keys.DOWN[Keys.F]){
+				} else if (state.keys.DOWN[Keys.F]){
 
 					me.action = "walk"
 					carrying = false
@@ -616,22 +616,22 @@ function App(state){
 						eat()
 					}
 				}
-			} else if ( state.Keys.DOWN[Keys.SPACE] ){
+			} else if ( state.keys.DOWN[Keys.SPACE] ){
 				me.action = 'attack'
 				kill( d )
-			} else if ( state.Keys.DOWN[Keys.ARROW_UP] ){
+			} else if ( state.keys.DOWN[Keys.ARROW_UP] ){
 				me.action = 'walk'
 				me.position = 'back'
 				me.y = me.y - 1 * me.speed
-			} else if ( state.Keys.DOWN[Keys.ARROW_DOWN] ){
+			} else if ( state.keys.DOWN[Keys.ARROW_DOWN] ){
 				me.action = 'walk'
 				me.position = 'front'
 				me.y = me.y  +  1 * me.speed
-			} else if ( state.Keys.DOWN[Keys.ARROW_LEFT] ){
+			} else if ( state.keys.DOWN[Keys.ARROW_LEFT] ){
 				me.action = 'walk'
 				me.position = 'left'
 				me.x = me.x - 1 * me.speed
-			} else if ( state.Keys.DOWN[Keys.ARROW_RIGHT] ){
+			} else if ( state.keys.DOWN[Keys.ARROW_RIGHT] ){
 				me.action = 'walk'
 				me.position = 'right'
 				me.x = me.x  +  1 * me.speed
