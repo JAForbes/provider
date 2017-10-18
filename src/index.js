@@ -65,6 +65,7 @@ const state = {
 			]
 	}
 	,characters: {}
+	,elements: {}
 	,camera: { 
 		x: 0
 		, y: 0
@@ -686,21 +687,9 @@ function App(state){
 	state.hunter.c = Hunter.of('c')
 	state.deer.d = Deer.of('d')
 
-	const f = 
+	state.elements.f = 
 		Element(0,0,"resources/img/original/elements/fire/idle.png")
-	const v = 
-		Element(0,-40,"resources/img/original/elements/villager/idle.png")
-	const v2 = 
-		Element(-25,-25,"resources/img/original/elements/villager/idle.png")
-	const v3 = 
-		Element(25,-25,"resources/img/original/elements/villager/idle.png")
-
-
-	state.characters.f = f
-	state.characters.v = v
-	state.characters.v2 = v2
-	state.characters.v3 = v3
-
+	
 	state.characters.d =
 		Character.of({
 			name: 'deer'
@@ -792,11 +781,24 @@ function App(state){
 			con.scale( state.camera.scale.x, state.camera.scale.y )
 			con.translate(character.x-state.camera.x,character.y-state.camera.y)
 			con.scale(character.scale, character.scale)
-			if( 'update' in character ){
-				character.update()
-			} else {
-				Character.update(character)
-			}
+			
+			Character.update(character)
+			
+			con.scale(1,1)
+			con.restore()
+		})
+	}
+
+	function systems$drawElements(){
+		Object.keys(state.elements).forEach(function(k){
+			const element = state.elements[k]
+			con.save()
+			con.scale( state.camera.scale.x, state.camera.scale.y )
+			con.translate(element.x-state.camera.x,element.y-state.camera.y)
+			con.scale(element.scale, element.scale)
+			
+			element.update()
+			
 			con.scale(1,1)
 			con.restore()
 		})
@@ -820,24 +822,36 @@ function App(state){
 		}
 	}
 
+
 	function system$village(){
 		const c = state.hunter.c
 		if( c.family.children + c.family.adults > 0 ){
-			state.characters.v2 = v2
+			state.elements.v2 = 
+				Element(
+					-25,-25,"resources/img/original/elements/villager/idle.png"
+				)
 		} else {
-			delete state.characters.v2
+			delete state.elements.v2
 		}
 
 		if (c.family.children+c.family.adults > 4){
-			state.characters.v = v
+			state.elements.v = 
+				Element(
+					0,-40,"resources/img/original/elements/villager/idle.png"
+				)
+	
 		} else {
-			delete state.characters.v
+			delete state.elements.v
 		}
 
 		if (c.family.children+c.family.adults > 8){
-			state.characters.v3 = v3
+			state.elements.v3 = 
+				Element(
+					25,-25,"resources/img/original/elements/villager/idle.png"
+				)
+
 		} else {
-			delete state.characters.v3
+			delete state.elements.v3
 		}
 	}
 
@@ -951,6 +965,7 @@ function App(state){
 				system$village()
 				Deer.system()
 				Hunter.system()
+				systems$drawElements()
 				systems$drawCharacters()
 				systems$sndLoop()
 				systems$sndSpatial()
@@ -1017,7 +1032,7 @@ function App(state){
 		fire: {
 			
 			snd: state.resources.snd.fire.element
-			,coords: f
+			,coords: state.elements.f
 		}
 	}
 	const loopingSounds = {
