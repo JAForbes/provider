@@ -65,6 +65,12 @@ const state = {
 			]
 	}
 	,characters: {}
+	,camera: { 
+		x: 0
+		, y: 0
+		, scale: { x: 1, y: 1 }
+		, target: null
+	}
 }
 
 const Util = {
@@ -517,7 +523,8 @@ function App(state){
 			}
 		}
 
-		,hunger({ status, id, day, family }){
+		,hunger(hunter){
+			const { status, id, day, family } = hunter
 			const statuses = Hunter.statuses
 
 			const me =
@@ -526,7 +533,7 @@ function App(state){
 			if( status == 'starving' ){
 				if( me.alive ){
 					me.alive = false
-					status = 'dead'
+					hunter.status = 'dead'
 					// eslint-disable-next-line no-undef, no-console
 					console.log( 
 						'you lasted '+day+' days but you have starved...' 
@@ -535,7 +542,7 @@ function App(state){
 			}
 
 
-			status = 
+			hunter.status = 
 				statuses[statuses.indexOf(status) - 1] || 'dead'
 
 			if( family.status == 'starving '){
@@ -752,7 +759,7 @@ function App(state){
 		Object.keys(spatialSounds).forEach(function(k){
 			const sndObj = spatialSounds[k]	
 			const volume = 
-				1-Math.abs(Util.distance(sndObj.coords,camera)/1000)
+				1-Math.abs(Util.distance(sndObj.coords,state.camera)/1000)
 			
 			if( volume > 0 && volume < 1 ){
 				SND.volume(sndObj.snd, volume)
@@ -778,8 +785,8 @@ function App(state){
 		Object.keys(state.characters).forEach(function(k){
 			const character = state.characters[k]
 			con.save()
-			con.scale( camera.scale.x, camera.scale.y )
-			con.translate(character.x-camera.x,character.y-camera.y)
+			con.scale( state.camera.scale.x, state.camera.scale.y )
+			con.translate(character.x-state.camera.x,character.y-state.camera.y)
 			con.scale(character.scale, character.scale)
 			if( 'update' in character ){
 				character.update()
@@ -792,18 +799,19 @@ function App(state){
 	}
 
 	function systems$camera(){
-		if( Util.distance(camera, state.characters[c.id]) > 10 ){
-			camera.x = camera.x + (camera.target.x - camera.x) * 0.05
-			camera.y = camera.y + (camera.target.y - camera.y) * 0.05
+		const target = state.characters[ state.camera.target ]
+		if( Util.distance(state.camera, state.characters[c.id]) > 10 ){
+			state.camera.x = state.camera.x + (target.x - state.camera.x) * 0.05
+			state.camera.y = state.camera.y + (target.y - state.camera.y) * 0.05
 		}
 	}
 
 	function system$dpi(){
 		// eslint-disable-next-line no-undef
 		if( window.innerWidth > 800 ){
-			camera.scale = { x:2, y: 2 }
+			state.camera.scale = { x:2, y: 2 }
 		} else {
-			camera.scale = { x:1, y: 1 }
+			state.camera.scale = { x:1, y: 1 }
 		}
 	}
 
@@ -926,6 +934,8 @@ function App(state){
 			// eslint-disable-next-line no-undef
 			SND.play( state.resources.snd.fire.element )
 
+			state.camera.target = c.id
+
 			if( !paused ){
 				systems$camera()
 				systems$prepCanvas()
@@ -973,6 +983,10 @@ function App(state){
 			state.characters[c.id].y = 40 * Util.random() * Util.even()
 			state.characters[d.id].x = -60
 			state.characters[d.id].y = -100
+
+			state.camera.x = state.characters.c.x
+			state.camera.y = state.characters.c.y + 10000
+
 			d.spawnRadius = 5
 			state.characters[c.id].alive = true
 			// eslint-disable-next-line no-undef
@@ -982,15 +996,10 @@ function App(state){
 	}
 
 
+	state.camera.x = state.characters.c.x
+	state.camera.y = state.characters.c.y + 10000
 	systems$initAudioResources()
 	systems$ui()
-
-	let camera = 
-		{ x:state.characters[c.id].x
-		, y:state.characters[c.id].y
-		, scale: { x: 1, y: 1 }
-		, target: state.characters[c.id] 
-		}
 		
 
 	const spatialSounds = {
