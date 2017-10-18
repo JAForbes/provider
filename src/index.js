@@ -313,18 +313,6 @@ function App(state){
 		
 		}
 
-		,die(character, respawn){
-			if( character.alive ){
-				character.alive = false 
-				character.respawnId = 
-					// eslint-disable-next-line no-undef
-					setInterval(
-						respawn
-						, 2000
-					)
-			}
-		}
-
 		,update(o){
 			for( let verb of o.verbs ){
 				if( 
@@ -351,20 +339,22 @@ function App(state){
 		}
 	}
 
-	function Deer(id){
+	// set playspeed to 1/8
+	const Deer = {
+		of(id){
+			return {
+				spawnRadius: 5
+				,id
+			}
+		}
 
-		const me =
-			state.characters[id]
+		// todo pass in an id not an object for other
+		,canSee(deer, other){
+			const me =
+				state.characters[deer.id]
 
-		Character.initSprites(me)
-
-		me.frame.playspeed = 1/8
-
-		let spawnRadius = 5
-
-		function canSee(character){
 			const them =
-				state.characters[character.id]
+				state.characters[other.id]
 				
 			return (
 				me.position == 'right' 
@@ -381,14 +371,17 @@ function App(state){
 			) 
 		}
 
-		function act(character){
-			const them =
-				state.characters[character.id]
+		,act(deer, other){
+			const me =
+				state.characters[deer.id]
 
+			const them =
+				state.characters[other.id]
+			
 			if( !me.alive ){
 				me.action = 'die'
 				me.frame.repeat = false
-			} else if ( canSee(character) ){
+			} else if ( Deer.canSee(deer, other) ){
 				me.action = 'run'
 				me.position = me.position == 'left' ? 'right' : 'left'
 			} else if (
@@ -406,27 +399,41 @@ function App(state){
 			}
 		}
 
-		function respawn(){
-			// eslint-disable-next-line no-undef
-			clearInterval(me.respawnId)
-			me.x = me.x + Util.random(spawnRadius)
+		,respawn(deer){
+
+			const me =
+				state.characters[deer.id]
+
+			me.x = me.x + Util.random(deer.spawnRadius)
 			me.y = Util.randomInt(200)
 			me.alive = true
 			me.action = 'idle'
 			me.position = 
 				me.position == 'right' ? 'left' : 'right'
 			me.frame.repeat = true
-			spawnRadius = spawnRadius + 10
+			deer.spawnRadius = deer.spawnRadius + 10
 		}
 
-		return {
-			respawn
-			,act
-			,canSee
-			,character: me
-			,id: 'd'
+		,system(){
+			const me = state.characters[d.id]
+	
+			Deer.act(d, c)
+			
+			if( me.alive == false && d.respawnId == null ) {
+
+				d.respawnId = 
+					// eslint-disable-next-line no-undef
+					setTimeout( 
+						() => {
+							Deer.respawn(d)
+							d.respawnId = null
+						}
+						, 2000 
+					)
+			}
 		}
-	}  
+
+	}
 
 	function Element(x,y,src){
 
@@ -486,7 +493,7 @@ function App(state){
 
 			if( Util.distance(me, them) < 60 ){
 				if( them.alive ){
-					Character.die( them, character.respawn )
+					them.alive = false
 					carrying = true
 					state.resources.snd.drum2.element
 						.currentTime = 1
@@ -666,15 +673,27 @@ function App(state){
 		}
 	}
 
-	state.characters.c =
-		Character.of({
-			name: 'hunter'
-			,verbs: state.verbs.c
-			,x: 100
-			,y: 40
-		})
+	const c = 
+		Hunter('c')
 
-	Character.initSprites( state.characters.c )
+	const d = 
+		Deer.of('d')
+
+
+	const f = 
+		Element(0,0,"resources/img/original/elements/fire/idle.png")
+	const v = 
+		Element(0,-40,"resources/img/original/elements/villager/idle.png")
+	const v2 = 
+		Element(-25,-25,"resources/img/original/elements/villager/idle.png")
+	const v3 = 
+		Element(25,-25,"resources/img/original/elements/villager/idle.png")
+
+
+	state.characters.f = f
+	state.characters.v = v
+	state.characters.v2 = v2
+	state.characters.v3 = v3
 
 	state.characters.d =
 		Character.of({
@@ -686,21 +705,16 @@ function App(state){
 
 	Character.initSprites( state.characters.d )
 
-	const c = 
-		Hunter('c')
 
-	const d = 
-		Deer('d')
+	state.characters.c =
+		Character.of({
+			name: 'hunter'
+			,verbs: state.verbs.c
+			,x: 100
+			,y: 40
+		})
 
-
-	const f = 
-		Element(0,0,"resources/img/original/elements/fire/idle.png")
-	const v = 
-		Element(0,-40,"resources/img/original/elements/villager/idle.png")
-	const v2 = 
-		Element(-25,-25,"resources/img/original/elements/villager/idle.png")
-	const v3 = 
-		Element(25,-25,"resources/img/original/elements/villager/idle.png")
+	Character.initSprites( state.characters.c )
 
 	let timeOfDay = 0
 	let increment = 0.1
@@ -765,14 +779,11 @@ function App(state){
 	}
 
 	function systems$drawCharacters(){
-		Object.keys(characters).forEach(function(k){
-			const character = characters[k]
+		Object.keys(state.characters).forEach(function(k){
+			const character = state.characters[k]
 			con.save()
 			con.translate(character.x-camera.x,character.y-camera.y)
 			con.scale(character.scale, character.scale)
-			if( 'act' in character){
-				character.act()
-			}
 			if( 'update' in character ){
 				character.update()
 			} else {
@@ -790,7 +801,6 @@ function App(state){
 		}
 	}
 
-
 	function system$dpi(){
 		// eslint-disable-next-line no-undef
 		if( window.innerWidth > 800 ){
@@ -799,36 +809,26 @@ function App(state){
 	}
 
 	function system$act(){
-		Object.keys(actors).forEach(function(k){
-			const other = actors[k]
-
-			Object.keys(actors).forEach(function(k){
-				const me = actors[k]
-
-				if( me != other ){
-					me.act(other)
-				}
-			})
-		})
+		c.act(d)
 	}
 
 	function system$village(){
 		if( c.family.children + c.family.adults > 0 ){
-			characters.v2 = v2
+			state.characters.v2 = v2
 		} else {
-			delete characters[v2]
+			delete state.characters.v2
 		}
 
 		if (c.family.children+c.family.adults > 4){
-			characters.v = v
+			state.characters.v = v
 		} else {
-			delete characters.v
+			delete state.characters.v
 		}
 
 		if (c.family.children+c.family.adults > 8){
-			characters.v3 = v3
+			state.characters.v3 = v3
 		} else {
-			delete characters.v3
+			delete state.characters.v3
 		}
 	}
 
@@ -934,6 +934,7 @@ function App(state){
 				systems$prepCanvas()
 				system$dpi()
 				system$village()
+				Deer.system()
 				system$act()
 				systems$drawCharacters()
 				systems$sndLoop()
@@ -973,8 +974,8 @@ function App(state){
 			c.status = 'peckish'
 			state.characters[c.id].x = 100 * Util.random() * Util.even()
 			state.characters[c.id].y = 40 * Util.random() * Util.even()
-			d.character.x = -60
-			d.character.y = -100
+			state.characters[d.id].x = -60
+			state.characters[d.id].y = -100
 			d.spawnRadius = 5
 			state.characters[c.id].alive = true
 			// eslint-disable-next-line no-undef
@@ -992,19 +993,7 @@ function App(state){
 		, y:state.characters[c.id].y
 		, target: state.characters[c.id] 
 		}
-
-	const actors = {
-		d, c
-	}
-
-	const characters = {
-		f
-		,v
-		,v2
-		,v3
-		,d:d.character
-		,c:state.characters[c.id]
-	}
+		
 
 	const spatialSounds = {
 		fire: {
