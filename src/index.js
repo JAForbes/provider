@@ -417,7 +417,7 @@ function App(state){
 		,system(){
 			const me = state.characters[d.id]
 	
-			Deer.act(d, c2)
+			Deer.act(d, c)
 			
 			if( me.alive == false && d.respawnId == null ) {
 
@@ -470,7 +470,7 @@ function App(state){
 		}
 	}
 
-	const Hunter2 = {
+	const Hunter = {
 		of(id){
 			return {
 				day: 0
@@ -518,7 +518,7 @@ function App(state){
 		}
 
 		,hunger({ status, id, day, family }){
-			const statuses = Hunter2.statuses
+			const statuses = Hunter.statuses
 
 			const me =
 				state.characters[id]
@@ -556,7 +556,7 @@ function App(state){
 			
 			const { status, family } = hunter
 
-			const statuses = Hunter2.statuses
+			const statuses = Hunter.statuses
 
 			SND.play(state.resources.snd.drum5.element)
 
@@ -575,8 +575,8 @@ function App(state){
 			SND.play(state.resources.snd.drum6.element)
 
 			hunter.family.status = 
-				Hunter2.statuses
-					[Hunter2.statuses.indexOf(hunter.family.status) + 1] 
+				Hunter.statuses
+					[Hunter.statuses.indexOf(hunter.family.status) + 1] 
 				|| 'healthy'
 
 			if( hunter.family.status == 'healthy' && hunter.family.adults > 0 ){
@@ -625,14 +625,14 @@ function App(state){
 					me.action = "walk"
 					hunter.carrying = false
 					if (Util.distance(me,{x:0,y:0})<75){
-						Hunter2.feed(hunter)
+						Hunter.feed(hunter)
 					} else {
-						Hunter2.eat(hunter)
+						Hunter.eat(hunter)
 					}
 				}
 			} else if ( state.keys.DOWN[Keys.SPACE] ){
 				me.action = 'attack'
-				Hunter2.kill( hunter, d )
+				Hunter.kill( hunter, d )
 			} else if ( state.keys.DOWN[Keys.ARROW_UP] ){
 				me.action = 'walk'
 				me.position = 'back'
@@ -665,12 +665,12 @@ function App(state){
 		}
 
 		,system(){
-
+			return Hunter.act(c, d)
 		}
 	}
 
-	const c2 = 
-		Hunter2.of('c')
+	const c = 
+		Hunter.of('c')
 
 	const d = 
 		Deer.of('d')
@@ -719,16 +719,16 @@ function App(state){
 		timeOfDay = timeOfDay + increment
 		if( timeOfDay > 1 ){
 			increment = -0.0125
-		} else if ( timeOfDay < 0 && state.characters[c2.id].alive ){
+		} else if ( timeOfDay < 0 && state.characters[c.id].alive ){
 			increment = 0.0125
-			c2.day = c2.day + 1
-			Hunter2.hunger(c2)
+			c.day = c.day + 1
+			Hunter.hunger(c)
 			
 			SND.play( state.resources.snd.drum1.element )
 
-			if( c2.day % 10 == 0 && c2.family.children > 0 ){
-				c2.family.adults = c2.family.adults + 1
-				c2.family.children = c2.family.children - 1
+			if( c.day % 10 == 0 && c.family.children > 0 ){
+				c.family.adults = c.family.adults + 1
+				c.family.children = c.family.children - 1
 			}
 		}
 	}
@@ -778,6 +778,7 @@ function App(state){
 		Object.keys(state.characters).forEach(function(k){
 			const character = state.characters[k]
 			con.save()
+			con.scale( camera.scale.x, camera.scale.y )
 			con.translate(character.x-camera.x,character.y-camera.y)
 			con.scale(character.scale, character.scale)
 			if( 'update' in character ){
@@ -791,7 +792,7 @@ function App(state){
 	}
 
 	function systems$camera(){
-		if( Util.distance(camera, state.characters[c2.id]) > 10 ){
+		if( Util.distance(camera, state.characters[c.id]) > 10 ){
 			camera.x = camera.x + (camera.target.x - camera.x) * 0.05
 			camera.y = camera.y + (camera.target.y - camera.y) * 0.05
 		}
@@ -800,28 +801,26 @@ function App(state){
 	function system$dpi(){
 		// eslint-disable-next-line no-undef
 		if( window.innerWidth > 800 ){
-			con.scale(2,2)
+			camera.scale = { x:2, y: 2 }
+		} else {
+			camera.scale = { x:1, y: 1 }
 		}
 	}
 
-	function system$act(){
-		Hunter2.act(c2, d)
-	}
-
 	function system$village(){
-		if( c2.family.children + c2.family.adults > 0 ){
+		if( c.family.children + c.family.adults > 0 ){
 			state.characters.v2 = v2
 		} else {
 			delete state.characters.v2
 		}
 
-		if (c2.family.children+c2.family.adults > 4){
+		if (c.family.children+c.family.adults > 4){
 			state.characters.v = v
 		} else {
 			delete state.characters.v
 		}
 
-		if (c2.family.children+c2.family.adults > 8){
+		if (c.family.children+c.family.adults > 8){
 			state.characters.v3 = v3
 		} else {
 			delete state.characters.v3
@@ -864,7 +863,7 @@ function App(state){
 						}
 					}
 					,m('h1', 'Provider')
-					,m('p#dayDisplay', 'Day: '+c2.day || 1)
+					,m('p#dayDisplay', 'Day: '+c.day || 1)
 				)
 				,m('#game.absolute'
 					,{ style:
@@ -879,23 +878,23 @@ function App(state){
 							}
 						}
 						,m('p#familyDisplay'
-							, 'Your village is '+c2.family.status
+							, 'Your village is '+c.family.status
 						)
 						,m('p#youDisplay'
-							, 'You are '+c2.status
+							, 'You are '+c.status
 						)
 						,m('p#gameDisplay'
 							,'You have '
-								+ c2.family.adults+ ' elders and '
-								+ c2.family.children
-								+ ' children.  '+c2.family.starved
+								+ c.family.adults+ ' elders and '
+								+ c.family.children
+								+ ' children.  '+c.family.starved
 								+ ' of your village have starved.'
 						)
 						,m('br')
 						,m('p#adviceDisplay'
-							, c2.carrying
+							, c.carrying
 							? Util.distance( 
-								state.characters[c2.id], {x:0,y:0}
+								state.characters[c.id], {x:0,y:0}
 							) > 75
 								? 'Eat: (F)'
 								: 'Feed Village: (F)'
@@ -933,7 +932,7 @@ function App(state){
 				system$dpi()
 				system$village()
 				Deer.system()
-				system$act()
+				Hunter.system()
 				systems$drawCharacters()
 				systems$sndLoop()
 				systems$sndSpatial()
@@ -946,7 +945,7 @@ function App(state){
 		}
 
 		,status(){
-			if( !state.characters[c2.id].alive ){
+			if( !state.characters[c.id].alive ){
 		
 				//eslint-disable-next-line no-undef
 				paused = true
@@ -961,21 +960,21 @@ function App(state){
 
 		,restart(){
 
-			c2.day = 1
-			c2.carrying = false
-			c2.family = {
+			c.day = 1
+			c.carrying = false
+			c.family = {
 				status: 'healthy'
 				,children: 2
 				,adults: 2
 				,starved: 0
 			}
-			c2.status = 'peckish'
-			state.characters[c2.id].x = 100 * Util.random() * Util.even()
-			state.characters[c2.id].y = 40 * Util.random() * Util.even()
+			c.status = 'peckish'
+			state.characters[c.id].x = 100 * Util.random() * Util.even()
+			state.characters[c.id].y = 40 * Util.random() * Util.even()
 			state.characters[d.id].x = -60
 			state.characters[d.id].y = -100
 			d.spawnRadius = 5
-			state.characters[c2.id].alive = true
+			state.characters[c.id].alive = true
 			// eslint-disable-next-line no-undef
 			paused = false
 			// eslint-disable-next-line no-undef
@@ -987,9 +986,10 @@ function App(state){
 	systems$ui()
 
 	let camera = 
-		{ x:state.characters[c2.id].x
-		, y:state.characters[c2.id].y
-		, target: state.characters[c2.id] 
+		{ x:state.characters[c.id].x
+		, y:state.characters[c.id].y
+		, scale: { x: 1, y: 1 }
+		, target: state.characters[c.id] 
 		}
 		
 
@@ -1014,6 +1014,7 @@ function App(state){
 
 	// eslint-disable-next-line no-undef
 	setInterval(systems$night,62.5)
+
 }
 
 App(state)
