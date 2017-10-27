@@ -261,14 +261,8 @@ function App(state){
 	}
 
 	const Character = {
-		of({ id, verbs, x, y }){
-			
-			state.frames[id] = Frame.of()
-			state.frames[id].scale = 4
-
-			state.coords[id].x = x
-			state.coords[id].y = y
-
+		of({ id, verbs }){
+		
 			return { 
 				id
 				, verbs
@@ -732,23 +726,32 @@ function App(state){
 		, { x: 0, y: 0 } 
 	)
 
+		
+	state.frames.deer = Frame.of()
+	state.frames.deer.scale = 4
+
+	state.coords.deer.x = 60
+	state.coords.deer.y = -100
+
 	state.characters.deer =
 		Character.of({
 			id: 'deer'
 			,verbs: state.verbs.deer
-			,x: 60
-			,y: -100
 		})
 
 	Character.initSprites( state.characters.deer )
 
 
+	state.frames.hunter = Frame.of()
+	state.frames.hunter.scale = 4
+
+	state.coords.hunter.x = 100
+	state.coords.hunter.y = 40
+
 	state.characters.hunter =
 		Character.of({
 			id: 'hunter'
 			,verbs: state.verbs.hunter
-			,x: 100
-			,y: 40
 		})
 
 	Character.initSprites( state.characters.hunter )
