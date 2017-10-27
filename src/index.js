@@ -1,6 +1,5 @@
 /* globals m */
 
-// @ts-check
 const Keys = {
 	ARROW_RIGHT: 39
 	,ARROW_DOWN: 40
