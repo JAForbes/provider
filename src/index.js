@@ -49,8 +49,8 @@ const state = {
 		,img: {}
 	}
 	,coords: {
-		c: {x:0, y:0, z:0}
-		,d: {x:0, y:0, z:0}
+		hunter: {x:0, y:0, z:0}
+		,deer: {x:0, y:0, z:0}
 		,f: {x:0, y:0, z:0}
 		,v: {x:0, y:0, z:0}
 		,v1: {x:0, y:0, z:0}
@@ -58,7 +58,7 @@ const state = {
 		,camera: {x:0, y:0}
 	}
 	,verbs: {
-		c: 
+		hunter: 
 			[ Verb('walk',['front'])
 			, Verb('walk',['left'])
 			, Verb('walk',['right'])
@@ -67,13 +67,14 @@ const state = {
 			, Verb('carry',['front','left','right','back'])
 			]
 
-		,d: 
+		,deer: 
 			[ Verb('run', ['right', 'left'])
 			, Verb('die', ['right', 'left'])
 			]
 	}
 	,characters: {}
 	,elements: {}
+	,frames: {}
 	,camera: { 
 		x: 0
 		, y: 0
@@ -177,6 +178,7 @@ function App(state){
 				, imageId: null
 				, playspeed: 1/8
 				, repeat: true
+				, scale: 1
 			}
 		}
 		
@@ -259,19 +261,21 @@ function App(state){
 	}
 
 	const Character = {
-		of({ name, verbs, x, y }){
+		of({ id, verbs, x, y }){
 			
+			state.frames[id] = Frame.of()
+			state.frames[id].scale = 4
+
+			state.coords[id].x = x
+			state.coords[id].y = y
+
 			return { 
-				name
+				id
 				, verbs
-				, x
-				, y
 				, imageId: null 
 				, position: null
 				, idles: {}
 				, speed: 4
-				, scale: 4
-				, frame: Frame.of()
 				, action: 'idle'
 				, alive: true
 				, respawnId: null
@@ -289,7 +293,7 @@ function App(state){
 
 					const src =
 						'resources/img/original/characters/'
-							+ character.name
+							+ character.id
 							+ '/'+position
 							+ '_'+verb.name+'.png'
 
@@ -315,7 +319,7 @@ function App(state){
 
 				const src =
 					'resources/img/original/characters/'
-						+ character.name
+						+ character.id
 						+ '/'+position
 						+ '_idle.png'
 
@@ -341,20 +345,20 @@ function App(state){
 				){
 					if( !(o.imageId == verb.images[o.position]) ){
 						o.imageId = verb.images[o.position]
-						Frame.reset(o.frame, verb.images[o.position])
+						
+						Frame.reset(
+							state.frames[o.id], verb.images[o.position]
+						)
 					}
 					break
 				}
 			}
 
-			if( o.action != 'idle' ){
-				Frame.next(o.frame)
-			} else {
+			if( o.action == 'idle' ){
 				if( o.imageId != o.idles[o.position] ){
 					o.imageId = o.idles[o.position]
-					Frame.reset(o.frame, o.idles[o.position])
+					Frame.reset(state.frames[o.id], o.idles[o.position])
 				}
-				Frame.next(o.frame)
 			}
 		}
 	}
@@ -370,87 +374,101 @@ function App(state){
 
 		// todo pass in an id not an object for other
 		,canSee(deer, other){
-			const me =
-				state.characters[deer.id]
-
-			const them =
-				state.characters[other.id]
-				
+			const [me, them] = 
+				[ deer.id, other.id ]
+					.map(
+						id => ({
+							c: state.characters[id]
+							,p: state.coords[id]
+						})
+					)
+			
 			return (
-				me.position == 'right' 
-				&& me.x < them.x  
-				&& them.x < me.x + 100
-				&& me.y - 50 < them.y
-				&& them.y < me.y + 50
+				me.c.position == 'right' 
+				&& me.p.x < them.p.x  
+				&& them.p.x < me.p.x + 100
+				&& me.p.y - 50 < them.p.y
+				&& them.p.y < me.p.y + 50
 
-				|| me.position == 'left'
-				&& me.x > them.x
-				&& them.x > me.x - 100
-				&& me.y - 50 < them.y
-				&& them.y < me.y + 50
+				|| me.c.position == 'left'
+				&& me.p.x > them.p.x
+				&& them.p.x > me.p.x - 100
+				&& me.p.y - 50 < them.p.y
+				&& them.p.y < me.p.y + 50
 			) 
 		}
 
 		,act(deer, other){
-			const me =
-				state.characters[deer.id]
-
-			const them =
-				state.characters[other.id]
-			
-			if( !me.alive ){
-				me.action = 'die'
-				me.frame.repeat = false
-			} else if ( Deer.canSee(deer, other) ){
-				me.action = 'run'
-				me.position = me.position == 'left' ? 'right' : 'left'
-			} else if (
-				me.action == 'run'
-				&& Util.distance(them,me) < 150
-			) {
-				me.x = me.x + ( me.position == 'left' ? -1 : 1 ) * me.speed
-			} else if ( me.action == 'run' ){
-				me.position = 
-					me.position == 'right' ? 'left' : 'right'
+			const [me, them] = 
+				[ deer.id, other.id ]
+					.map(
+						id => ({
+							c: state.characters[id]
+							,p: state.coords[id]
+						})
+					)
 				
-				me.action = 'idle'
+			if( !me.c.alive ){
+				me.c.action = 'die'
+				state.frames[me.c.id].repeat = false
+			} else if ( Deer.canSee(deer, other) ){
+				me.c.action = 'run'
+				me.c.position = me.c.position == 'left' ? 'right' : 'left'
+			} else if (
+				me.c.action == 'run'
+				&& Util.distance(them.p, me.p) < 150
+			) {
+				me.p.x = me.p.x + ( 
+					me.c.position == 'left' ? -1 : 1 
+				) * me.c.speed
+			} else if ( me.c.action == 'run' ){
+				me.c.position = 
+					me.c.position == 'right' ? 'left' : 'right'
+				
+				me.c.action = 'idle'
 			} else {
-				me.action = 'idle'
+				me.c.action = 'idle'
 			}
 		}
 
 		,respawn(deer){
 
-			const me =
-				state.characters[deer.id]
+			const [me] = 
+				[ deer.id ]
+					.map(
+						id => ({
+							c: state.characters[id]
+							,p: state.coords[id]
+						})
+					)
 
-			me.x = me.x + Util.random(deer.spawnRadius)
-			me.y = Util.randomInt(200)
-			me.alive = true
-			me.action = 'idle'
-			me.position = 
-				me.position == 'right' ? 'left' : 'right'
-			me.frame.repeat = true
+			state.characters[deer.id]
+
+			me.p.x = me.p.x + Util.random(deer.spawnRadius)
+			me.p.y = Util.randomInt(200)
+			me.c.alive = true
+			me.c.action = 'idle'
+			me.c.position = 
+				me.c.position == 'right' ? 'left' : 'right'
+			state.frames[me.c.id].repeat = true
 			deer.spawnRadius = deer.spawnRadius + 10
 		}
 
 		,system(){
-
-			const c = state.hunter.c
-			const d = state.deer.d
-
-			const me = state.characters[d.id]
-
-			Deer.act(d, c)
 			
-			if( me.alive == false && d.respawnId == null ) {
+			Deer.act(state.deer.deer, state.hunter.hunter)
+			
+			if( 
+				state.characters.deer.alive == false 
+				&& state.deer.deer.respawnId == null 
+			) {
 
-				d.respawnId = 
+				state.deer.deer.respawnId = 
 					// eslint-disable-next-line no-undef
 					setTimeout( 
 						() => {
-							Deer.respawn(d)
-							d.respawnId = null
+							Deer.respawn(state.deer.deer)
+							state.deer.deer.respawnId = null
 						}
 						, 2000 
 					)
@@ -459,38 +477,28 @@ function App(state){
 
 	}
 
-	function Element(x,y,src){
-
-		const frame = Frame.of()
-		// eslint-disable-next-line no-undef
-		const image = new Image()
-		
-		image.src = src
-		
-		state.resources.img[src] = {
-			element:image
-			,src
+	const Element = {
+		of(id){
+			return {
+				id
+			}
 		}
+		,init({ id }, src, { x, y } ){
+			// eslint-disable-next-line no-undef
+			const image = new Image()
+			
+			image.src = src
+			
+			state.frames[id] = Frame.of()
+			state.frames[id].scale = 4
+			state.resources.img[src] = {
+				element:image
+				,src
+			}
 
-		Frame.reset(frame, src)
+			Frame.reset(state.frames[id], src)
 
-		return {
-			update: () => Frame.next(frame)
-			,get x(){
-				return x
-			}
-			,set x(a){
-				return x = a
-			}
-			,get y(){
-				return y
-			}
-			,set y(a){
-				return y = a
-			}
-			,get scale(){
-				return 4
-			}
+			state.coords[id] = { x, y }
 		}
 	}
 
@@ -513,15 +521,20 @@ function App(state){
 		,statuses: [ 'starving', 'hungry', 'peckish', 'healthy']
 
 		,kill(hunter, deer){
-			const me =
-				state.characters[hunter.id]
+			
+			const [me, them] = 
+				[ hunter.id, deer.id ]
+					.map(
+						id => ({
+							c: state.characters[id]
+							,p: state.coords[id]
+						})
+					)
+			
 
-			const them =
-				state.characters[deer.id]
-
-			if( Util.distance(me, them) < 60 ){
-				if( them.alive ){
-					them.alive = false
+			if( Util.distance(me.p, them.p) < 60 ){
+				if( them.c.alive ){
+					them.c.alive = false
 					hunter.carrying = true
 					state.resources.snd.drum2.element
 						.currentTime = 1
@@ -545,13 +558,20 @@ function App(state){
 			const { status, id, day, family } = hunter
 			const statuses = Hunter.statuses
 
-			const me =
-				state.characters[id]
 
+			const [me] = 
+				[ id ]
+					.map(
+						id => ({
+							c: state.characters[id]
+							,p: state.coords[id]
+						})
+					)
+			
 			if( status == 'starving' ){
-				if( me.alive ){
-					me.alive = false
-					hunter.status = 'dead'
+				if( me.c.alive ){
+					me.c.alive = false
+					me.c.status = 'dead'
 					// eslint-disable-next-line no-undef, no-console
 					console.log( 
 						'you lasted '+day+' days but you have starved...' 
@@ -602,7 +622,7 @@ function App(state){
 			hunter.family.status = 
 				Hunter.statuses
 					[Hunter.statuses.indexOf(hunter.family.status) + 1] 
-				|| 'healthy'
+					|| 'healthy'
 
 			if( hunter.family.status == 'healthy' && hunter.family.adults > 0 ){
 				hunter.family.children ++ 
@@ -617,68 +637,74 @@ function App(state){
 				, carrying
 			} = hunter
 
-			const me =
-				state.characters[id]
-
+			
+			const [me] = 
+				[ id ]
+					.map(
+						id => ({
+							c: state.characters[id]
+							,p: state.coords[id]
+						})
+					)
+			
 			const [newSpeed, newPlayspeed] =
 				{ 'healthy': [5, 1/3 * 0.5]
-				, 'peckish': [3, me.frame.playspeed]
+				, 'peckish': [3, state.frames[me.c.id].playspeed]
 				, 'hungry': [2.5, 1/4 * 0.5]
 				, 'starving': [1.5,1/5 * 0.5]
-				}[ status ] || [me.speed, me.frame.playspeed]
+				}[ status ] || [me.c.speed, state.frames[me.c.id].playspeed]
 
-			me.speed = newSpeed
-			me.frame.playspeed = newPlayspeed
+			me.c.speed = newSpeed
+			state.frames[me.c.id].playspeed = newPlayspeed
 			
-
 			if( carrying ){
-				me.action = 'carry'
+				me.c.action = 'carry'
 				if (state.keys.DOWN[Keys.ARROW_UP] ){
-					me.position = "back"
-					me.y = me.y-1*me.speed
+					me.c.position = "back"
+					me.p.y = me.p.y-1*me.c.speed
 				} else if (state.keys.DOWN[Keys.ARROW_DOWN]) {
-					me.position = "front"
-					me.y= me.y + 1*me.speed
+					me.c.position = "front"
+					me.p.y= me.p.y + 1*me.c.speed
 				} else if ( state.keys.DOWN[Keys.ARROW_LEFT] ){
-					me.position = "left"
-					me.x= me.x-1*me.speed
+					me.c.position = "left"
+					me.p.x= me.p.x-1*me.c.speed
 				} else if ( state.keys.DOWN[Keys.ARROW_RIGHT] ){
-					me.position = "right"
-					me.x= me.x + 1*me.speed
+					me.c.position = "right"
+					me.p.x= me.p.x + 1*me.c.speed
 				} else if (state.keys.DOWN[Keys.F]){
 
-					me.action = "walk"
+					me.c.action = "walk"
 					hunter.carrying = false
-					if (Util.distance(me,{x:0,y:0})<75){
+					if (Util.distance(me.p,{x:0,y:0})<75){
 						Hunter.feed(hunter)
 					} else {
 						Hunter.eat(hunter)
 					}
 				}
 			} else if ( state.keys.DOWN[Keys.SPACE] ){
-				me.action = 'attack'
+				me.c.action = 'attack'
 				Hunter.kill( hunter, deer )
 			} else if ( state.keys.DOWN[Keys.ARROW_UP] ){
-				me.action = 'walk'
-				me.position = 'back'
-				me.y = me.y - 1 * me.speed
+				me.c.action = 'walk'
+				me.c.position = 'back'
+				me.p.y = me.p.y - 1 * me.c.speed
 			} else if ( state.keys.DOWN[Keys.ARROW_DOWN] ){
-				me.action = 'walk'
-				me.position = 'front'
-				me.y = me.y  +  1 * me.speed
+				me.c.action = 'walk'
+				me.c.position = 'front'
+				me.p.y = me.p.y  +  1 * me.c.speed
 			} else if ( state.keys.DOWN[Keys.ARROW_LEFT] ){
-				me.action = 'walk'
-				me.position = 'left'
-				me.x = me.x - 1 * me.speed
+				me.c.action = 'walk'
+				me.c.position = 'left'
+				me.p.x = me.p.x - 1 * me.c.speed
 			} else if ( state.keys.DOWN[Keys.ARROW_RIGHT] ){
-				me.action = 'walk'
-				me.position = 'right'
-				me.x = me.x  +  1 * me.speed
+				me.c.action = 'walk'
+				me.c.position = 'right'
+				me.p.x = me.p.x  +  1 * me.c.speed
 			} else {
-				me.action = 'idle'
+				me.c.action = 'idle'
 			}
 
-			if (me.action == "walk"){
+			if (me.c.action == "walk"){
 				
 				SND.play(state.resources.snd.walk.element)
 				if (state.resources.snd.walk.element.currentTime>4){
@@ -690,42 +716,48 @@ function App(state){
 		}
 
 		,system(){
-			return Hunter.act(state.hunter.c, state.deer.d)
+			return Hunter.act(state.hunter.hunter, state.deer.deer)
 		}
 	}
 
-	state.hunter.c = Hunter.of('c')
-	state.deer.d = Deer.of('d')
+	state.hunter.hunter = Hunter.of('hunter')
+	state.deer.deer = Deer.of('deer')
 
 	state.elements.f = 
-		Element(0,0,"resources/img/original/elements/fire/idle.png")
+		Element.of( 'f' )
 	
-	state.characters.d =
+	Element.init(
+		state.elements.f
+		, "resources/img/original/elements/fire/idle.png"
+		, { x: 0, y: 0 } 
+	)
+
+	state.characters.deer =
 		Character.of({
-			name: 'deer'
-			,verbs: state.verbs.d
+			id: 'deer'
+			,verbs: state.verbs.deer
 			,x: 60
 			,y: -100
 		})
 
-	Character.initSprites( state.characters.d )
+	Character.initSprites( state.characters.deer )
 
 
-	state.characters.c =
+	state.characters.hunter =
 		Character.of({
-			name: 'hunter'
-			,verbs: state.verbs.c
+			id: 'hunter'
+			,verbs: state.verbs.hunter
 			,x: 100
 			,y: 40
 		})
 
-	Character.initSprites( state.characters.c )
+	Character.initSprites( state.characters.hunter )
 
 	let timeOfDay = 0
 	let increment = 0.1
 
 	function systems$night(){
-		const c = state.hunter.c
+		const c = state.hunter.hunter
 		timeOfDay = timeOfDay + increment
 		if( timeOfDay > 1 ){
 			increment = -0.0125
@@ -786,40 +818,39 @@ function App(state){
 		con.translate(can.width/2, can.height/2)
 	}
 
-	function systems$drawCharacters(){
-		Object.keys(state.characters).forEach(function(k){
-			const character = state.characters[k]
+	function systems$drawFrames(){
+		
+		Object.keys(state.frames)
+		.forEach(function(id){
+			
 			con.save()
 			con.scale( state.camera.scale.x, state.camera.scale.y )
-			con.translate(character.x-state.camera.x,character.y-state.camera.y)
-			con.scale(character.scale, character.scale)
+			const coords = state.coords[id]
 			
-			Character.update(character)
+			con.translate(coords.x-state.camera.x,coords.y-state.camera.y)
+			
+			const frame = state.frames[id]
+			con.scale(frame.scale, frame.scale)
+			
+			Frame.next(frame)
 			
 			con.scale(1,1)
 			con.restore()
 		})
 	}
 
-	function systems$drawElements(){
-		Object.keys(state.elements).forEach(function(k){
-			const element = state.elements[k]
-			con.save()
-			con.scale( state.camera.scale.x, state.camera.scale.y )
-			con.translate(element.x-state.camera.x,element.y-state.camera.y)
-			con.scale(element.scale, element.scale)
-			
-			element.update()
-			
-			con.scale(1,1)
-			con.restore()
+	function systems$updateCharacters(){
+		Object.keys(state.characters).forEach(function(k){
+			const character = state.characters[k]
+			Character.update(character)
 		})
+		
 	}
 
 	function systems$camera(){
-		const target = state.characters[ state.camera.target ]
-		const c = state.hunter.c
-		if( Util.distance(state.camera, state.characters[c.id]) > 10 ){
+		const target = state.coords[ state.camera.target ]
+		
+		if( Util.distance(state.camera, target) > 10 ){
 			state.camera.x = state.camera.x + (target.x - state.camera.x) * 0.05
 			state.camera.y = state.camera.y + (target.y - state.camera.y) * 0.05
 		}
@@ -836,21 +867,31 @@ function App(state){
 
 
 	function system$village(){
-		const c = state.hunter.c
+		const c = state.hunter.hunter
 		if( c.family.children + c.family.adults > 0 ){
+
 			state.elements.v2 = 
-				Element(
-					-25,-25,"resources/img/original/elements/villager/idle.png"
-				)
+				Element.of( 'v2' )
+
+			Element.init(
+				state.elements.v2
+				, "resources/img/original/elements/villager/idle.png"
+				, { x: -25, y: -25 } 
+			)
+
 		} else {
 			delete state.elements.v2
 		}
 
 		if (c.family.children+c.family.adults > 4){
 			state.elements.v = 
-				Element(
-					0,-40,"resources/img/original/elements/villager/idle.png"
-				)
+				Element.of( 'v' )
+
+			Element.init(
+				state.elements.v
+				, "resources/img/original/elements/villager/idle.png"
+				, { x: -25, y: -25 } 
+			)
 	
 		} else {
 			delete state.elements.v
@@ -858,9 +899,13 @@ function App(state){
 
 		if (c.family.children+c.family.adults > 8){
 			state.elements.v3 = 
-				Element(
-					25,-25,"resources/img/original/elements/villager/idle.png"
-				)
+				Element.of( 'v3' )
+
+			Element.init(
+				state.elements.v3
+				, "resources/img/original/elements/villager/idle.png"
+				, { x: 25, y: -25 } 
+			)
 
 		} else {
 			delete state.elements.v3
@@ -883,7 +928,7 @@ function App(state){
 	}
 
 	function systems$ui(){
-		const c = state.hunter.c
+		const c = state.hunter.hunter
 
 		m.render(
 			// eslint-disable-next-line no-undef
@@ -967,7 +1012,7 @@ function App(state){
 			// eslint-disable-next-line no-undef
 			SND.play( state.resources.snd.fire.element )
 
-			const c = state.hunter.c
+			const c = state.hunter.hunter
 			state.camera.target = c.id
 
 			if( !paused ){
@@ -977,8 +1022,8 @@ function App(state){
 				system$village()
 				Deer.system()
 				Hunter.system()
-				systems$drawElements()
-				systems$drawCharacters()
+				systems$updateCharacters()
+				systems$drawFrames()
 				systems$sndLoop()
 				systems$sndSpatial()
 				systems$ui()
@@ -990,7 +1035,7 @@ function App(state){
 		}
 
 		,status(){
-			const c = state.hunter.c
+			const c = state.hunter.hunter
 			if( !state.characters[c.id].alive ){
 		
 				//eslint-disable-next-line no-undef
@@ -1005,8 +1050,8 @@ function App(state){
 		}
 
 		,restart(){
-			const c = state.hunter.c
-			const d = state.deer.d
+			const c = state.hunter.hunter
+			const d = state.deer.deer
 
 			c.day = 1
 			c.carrying = false
@@ -1017,13 +1062,13 @@ function App(state){
 				,starved: 0
 			}
 			c.status = 'peckish'
-			state.characters[c.id].x = 100 * Util.random() * Util.even()
-			state.characters[c.id].y = 40 * Util.random() * Util.even()
-			state.characters[d.id].x = -60
-			state.characters[d.id].y = -100
+			state.coords.hunter.x = 100 * Util.random() * Util.even()
+			state.coords.hunter.y = 40 * Util.random() * Util.even()
+			state.coords.deer.x = -60
+			state.coords.deer.y = -100
 
-			state.camera.x = state.characters.c.x
-			state.camera.y = state.characters.c.y - 10000
+			state.camera.x = state.coords.hunter.x
+			state.camera.y = state.coords.hunter.y - 10000
 
 			d.spawnRadius = 5
 			state.characters[c.id].alive = true
@@ -1034,8 +1079,8 @@ function App(state){
 	}
 
 
-	state.camera.x = state.characters.c.x
-	state.camera.y = state.characters.c.y - 10000
+	state.camera.x = state.coords.hunter.x
+	state.camera.y = state.coords.hunter.y - 10000
 	systems$initAudioResources()
 	state.spatialSounds.fire = {
 		snd: 'fire'
