@@ -49,6 +49,15 @@ const state = {
 		}
 		,img: {}
 	}
+	,coords: {
+		c: {x:0, y:0, z:0}
+		,d: {x:0, y:0, z:0}
+		,f: {x:0, y:0, z:0}
+		,v: {x:0, y:0, z:0}
+		,v1: {x:0, y:0, z:0}
+		,v2: {x:0, y:0, z:0}
+		,camera: {x:0, y:0}
+	}
 	,verbs: {
 		c: 
 			[ Verb('walk',['front'])
@@ -74,6 +83,8 @@ const state = {
 	}
 	,hunter: {}
 	,deer: {}
+	,spatialSounds:{}
+	,loopingSounds: {}
 
 }
 
@@ -599,7 +610,7 @@ function App(state){
 			}
 		}
 
-		,act(hunter, d){
+		,act(hunter, deer){
 			
 			const {
 				id
@@ -647,7 +658,7 @@ function App(state){
 				}
 			} else if ( state.keys.DOWN[Keys.SPACE] ){
 				me.action = 'attack'
-				Hunter.kill( hunter, state.deer.d )
+				Hunter.kill( hunter, deer )
 			} else if ( state.keys.DOWN[Keys.ARROW_UP] ){
 				me.action = 'walk'
 				me.position = 'back'
@@ -680,7 +691,7 @@ function App(state){
 		}
 
 		,system(){
-			return Hunter.act(state.hunter.c, state.hunter.d)
+			return Hunter.act(state.hunter.c, state.deer.d)
 		}
 	}
 
@@ -734,28 +745,30 @@ function App(state){
 	}
 
 	function systems$sndLoop(){
-		Object.keys(loopingSounds).forEach(function(k){
-			const snd = loopingSounds[k]
+		Object.keys(state.loopingSounds).forEach(function(k){
+			const sndId = state.loopingSounds[k]
+			const sndResource = state.resources.snd[sndId]
 
 			if(SND.currentTime == 0){
-				SND.play(snd)
+				SND.play(sndResource.element)
 			}
 
-			if( snd.currentTime > 8 ){
-				snd.currentTime = 0
+			if( sndResource.element.currentTime > 8 ){
+				sndResource.element.currentTime = 0
 			}
 			
 		})
 	}
 
 	function systems$sndSpatial(){
-		Object.keys(spatialSounds).forEach(function(k){
-			const sndObj = spatialSounds[k]	
+		Object.keys(state.spatialSounds).forEach(function(k){
+			const sndObj = state.spatialSounds[k]	
+			const sndResource = state.resources.snd[sndObj.snd]
 			const volume = 
-				1-Math.abs(Util.distance(sndObj.coords,state.camera)/1000)
+				1-Math.min(1, Util.distance(sndObj.coords,state.camera) / 1000 )
 			
 			if( volume > 0 && volume < 1 ){
-				SND.volume(sndObj.snd, volume)
+				SND.volume(sndResource.element, volume)
 			}
 		})
 	}
@@ -1011,7 +1024,7 @@ function App(state){
 			state.characters[d.id].y = -100
 
 			state.camera.x = state.characters.c.x
-			state.camera.y = state.characters.c.y + 10000
+			state.camera.y = state.characters.c.y - 10000
 
 			d.spawnRadius = 5
 			state.characters[c.id].alive = true
@@ -1023,22 +1036,17 @@ function App(state){
 
 
 	state.camera.x = state.characters.c.x
-	state.camera.y = state.characters.c.y + 10000
+	state.camera.y = state.characters.c.y - 10000
 	systems$initAudioResources()
+	state.spatialSounds.fire = {
+		snd: 'fire'
+		,coords: state.elements.f
+	}
 	systems$ui()
 		
 
-	const spatialSounds = {
-		fire: {
-			
-			snd: state.resources.snd.fire.element
-			,coords: state.elements.f
-		}
-	}
-	const loopingSounds = {
-		
-		fire: state.resources.snd.fire.element
-	}
+	state.loopingSounds.fire = 'fire'
+	
 
 	// eslint-disable-next-line no-undef
 	const can = document.getElementById('c')
