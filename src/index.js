@@ -365,7 +365,7 @@ function App(state){
 					const image = new Image()
 
 					const src =
-						'resources/img/original/characters/'
+						'resources/img/characters/'
 							+ character.name
 							+ '/'+position
 							+ '_'+verb.name+'.png'
@@ -802,6 +802,29 @@ function App(state){
 	}
 
 	{
+		state.deer[deer] = Deer.of(deer)
+		state.frames[deer] = Frame.of()
+		state.frames[deer].scale = 4
+	
+		state.coords[deer] = { x: 60, y: -100, z: 0 }
+		state.verbs[deer] =
+			[ Verb('idle', ['left', 'right'])
+			, Verb('run', ['right', 'left'])
+			, Verb('die', ['right', 'left'])
+			]
+			
+		state.characters[deer] =
+			Character.of({
+				id: deer
+				,name: 'deer'
+				,position: 'left'
+			})
+	
+		Character.initSprites( state.characters[deer] )
+	}
+
+
+	{
 		state.verbs[hunter] = 
 			[ Verb('idle', ['front', 'left', 'right', 'back'])
 			, Verb('walk',['front'])
@@ -829,27 +852,6 @@ function App(state){
 		Character.initSprites( state.characters[hunter] )
 	}
 
-	{
-		state.deer[deer] = Deer.of(deer)
-		state.frames[deer] = Frame.of()
-		state.frames[deer].scale = 4
-	
-		state.coords[deer] = { x: 60, y: -100, z: 0 }
-		state.verbs[deer] =
-			[ Verb('idle', ['left', 'right'])
-			, Verb('run', ['right', 'left'])
-			, Verb('die', ['right', 'left'])
-			]
-			
-		state.characters[deer] =
-			Character.of({
-				id: deer
-				,name: 'deer'
-				,position: 'left'
-			})
-	
-		Character.initSprites( state.characters[deer] )
-	}
 
 	/**
 	 * 
