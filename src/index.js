@@ -79,7 +79,6 @@ const state = {
 	}
 	,verbs: {}
 	,characters: {}
-	,elements: {}
 	,frames: {}
 	,camera: { 
 		x: 0
@@ -544,46 +543,6 @@ function App(state){
 
 	}
 
-	const Element = {
-		/**
-		 * @param {string} id 
-		 * @returns {Provider.Element}
-		 */
-		of(id){
-			return {
-				id
-			}
-		},
-		
-		/**
-		 * 
-		 * @param {Provider.Element} element 
-		 * @param {string} src 
-		 * @param {Provider.Coord} coords 
-		 */
-		init(element, src, coords){
-
-			const { id } = element
-			const { x, y, z } = coords
-
-			// eslint-disable-next-line no-undef
-			const image = new Image()
-			
-			image.src = src
-			
-			state.frames[id] = Frame.of()
-			state.frames[id].scale = 4
-			state.resources.img[src] = {
-				element:image
-				,src
-			}
-
-			Frame.reset(state.frames[id], src)
-
-			state.coords[id] = { x, y, z }
-		}
-	}
-
 	const Hunter = {
 		/**
 		 * 
@@ -842,63 +801,85 @@ function App(state){
 		}
 	}
 
-	state.verbs[hunter] = 
-		[ Verb('idle', ['front', 'left', 'right', 'back'])
-		, Verb('walk',['front'])
-		, Verb('walk',['left'])
-		, Verb('walk',['right'])
-		, Verb('walk',['back'])
-		, Verb('attack',['front','left','right','back'])
-		, Verb('carry',['front','left','right','back'])
-		]
-
-	state.hunter[hunter] = Hunter.of(hunter)
-	state.deer[deer] = Deer.of(deer)
-
-	state.elements.f = 
-		Element.of( 'f' )
+	{
+		state.verbs[hunter] = 
+			[ Verb('idle', ['front', 'left', 'right', 'back'])
+			, Verb('walk',['front'])
+			, Verb('walk',['left'])
+			, Verb('walk',['right'])
+			, Verb('walk',['back'])
+			, Verb('attack',['front','left','right','back'])
+			, Verb('carry',['front','left','right','back'])
+			]
 	
-	Element.init(
-		state.elements.f
-		, "resources/img/original/elements/fire/idle.png"
-		, { x: 0, y: 0, z: 0 } 
-	)
+		state.hunter[hunter] = Hunter.of(hunter)
+	
+		state.frames[hunter] = Frame.of()
+		state.frames[hunter].scale = 4
+	
+		state.coords[hunter] = { x: 100, y: 40, z: 0 }
+	
+		state.characters[hunter] =
+			Character.of({
+				id: hunter
+				,name: 'hunter'
+				,position: 'left'
+			})
+	
+		Character.initSprites( state.characters[hunter] )
+	}
+
+	{
+		state.deer[deer] = Deer.of(deer)
+		state.frames[deer] = Frame.of()
+		state.frames[deer].scale = 4
+	
+		state.coords[deer] = { x: 60, y: -100, z: 0 }
+		state.verbs[deer] =
+			[ Verb('idle', ['left', 'right'])
+			, Verb('run', ['right', 'left'])
+			, Verb('die', ['right', 'left'])
+			]
+			
+		state.characters[deer] =
+			Character.of({
+				id: deer
+				,name: 'deer'
+				,position: 'left'
+			})
+	
+		Character.initSprites( state.characters[deer] )
+	}
+
+	/**
+	 * 
+	 * @param {string} id 
+	 * @param {string} name 
+	 * @param {Provider.Coord} coords 
+	 */
+	function SimpleCharacter(id, name, coords){
+		state.verbs[id] = 
+			[ Verb('idle', ['left']) ]
 
 		
-	state.frames[deer] = Frame.of()
-	state.frames[deer].scale = 4
+		state.frames[id] = Frame.of()
+		state.frames[id].scale = 4
 
-	state.coords[deer] = { x: 60, y: -100, z: 0 }
-	state.verbs[deer] =
-		[ Verb('idle', ['left', 'right'])
-		, Verb('run', ['right', 'left'])
-		, Verb('die', ['right', 'left'])
-		]
+		state.coords[id] = coords
 		
-	state.characters[deer] =
-		Character.of({
-			id: deer
-			,name: 'deer'
-			,position: 'left'
-		})
 
-	Character.initSprites( state.characters[deer] )
+		state.characters[id] =
+			Character.of({
+				id,
+				name,
+				position: 'left'
+			})
 
+		Character.initSprites( state.characters[id] )
+	}
 
-	state.frames[hunter] = Frame.of()
-	state.frames[hunter].scale = 4
-
-	state.coords[hunter] = { x: 100, y: 40, z: 0 }
-
-	state.characters[hunter] =
-		Character.of({
-			id: hunter
-			,name: 'hunter'
-			,position: 'left'
-		})
-
-	Character.initSprites( state.characters[hunter] )
-
+	SimpleCharacter('f', 'fire', { x:0, y:0, z:0 })
+	
 	let timeOfDay = 0
 	let increment = 0.1
 
@@ -1026,45 +1007,32 @@ function App(state){
 		const c = state.hunter[hunter]
 		if( c.family.children + c.family.adults > 0 ){
 
-			state.elements.v2 = 
-				Element.of( 'v2' )
-
-			Element.init(
-				state.elements.v2
-				, "resources/img/original/elements/villager/idle.png"
-				, { x: -25, y: -25, z: 0 } 
+			SimpleCharacter(
+				'v2', 'villager', { x: -25, y: -25, z: 0 } 
 			)
 
 		} else {
-			delete state.elements.v2
+			delete state.characters.v2
 		}
 
 		if (c.family.children+c.family.adults > 4){
-			state.elements.v = 
-				Element.of( 'v' )
 
-			Element.init(
-				state.elements.v
-				, "resources/img/original/elements/villager/idle.png"
-				, { x: -25, y: -25, z: 0 } 
+			SimpleCharacter(
+				'v', 'villager', { x: -25, y: -25, z: 0 } 
 			)
 	
 		} else {
-			delete state.elements.v
+			delete state.characters.v
 		}
 
 		if (c.family.children+c.family.adults > 8){
-			state.elements.v3 = 
-				Element.of( 'v3' )
 
-			Element.init(
-				state.elements.v3
-				, "resources/img/original/elements/villager/idle.png"
-				, { x: 25, y: -25, z: 0 } 
+			SimpleCharacter(
+				'v3', 'villager', { x: 25, y: -25, z: 0 }
 			)
 
 		} else {
-			delete state.elements.v3
+			delete state.characters.v3
 		}
 	}
 
@@ -1250,9 +1218,7 @@ function App(state){
 	}
 	systems$ui()
 		
-
 	state.loopingSounds.fire = 'fire'
-	
 
 	const can = /** @type {HTMLCanvasElement} */ (
 		// eslint-disable-next-line no-undef

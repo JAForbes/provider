@@ -21,10 +21,6 @@ export type Character = {
     respawnId: number | null
 }
 
-export type Element = {
-    id: string
-}
-
 export type Frame = {
     count: number
     width: number
@@ -89,9 +85,6 @@ export type State = {
     }
     characters: {
         [index:string]: Character
-    }
-    elements: {
-        [index:string]: Element
     }
     frames: {
         [index:string]: Frame
