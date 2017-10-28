@@ -1,4 +1,15 @@
-/* globals m */
+// @ts-check 
+
+const m = /** @type {any} */ (
+	// @ts-ignore
+	// eslint-disable-next-line
+	window.m
+)
+
+
+const uuid = () => Math.random().toString(15).slice(2)
+const hunter = uuid()
+const deer = uuid()
 
 const Keys = {
 	ARROW_RIGHT: 39
@@ -9,19 +20,29 @@ const Keys = {
 	,F: 70
 }
 
-
 const LocalStorage = {
+
+	/**
+	 * @param {string} k 
+	 * @param {string} v 
+	 */
 	set(k, v){
+		
 		// eslint-disable-next-line no-undef
 		return localStorage.setItem(k, v)
 	}
-	,get(k){
+
+	,get( /** @type {string}*/ k){
 		// eslint-disable-next-line no-undef
 		return localStorage.getItem(k)
 	}
 }
 
-
+/**
+	@param {string} name 
+	@param {string[]} positions 
+	@returns {Provider.Verb}
+ */
 function Verb(name, positions){
 	return {
 		images: {}
@@ -30,6 +51,7 @@ function Verb(name, positions){
 	}
 }
 
+/** @type {Provider.State}  */
 const state = {
 	keys: {
 		DOWN: {}
@@ -49,35 +71,20 @@ const state = {
 		,img: {}
 	}
 	,coords: {
-		hunter: {x:0, y:0, z:0}
-		,deer: {x:0, y:0, z:0}
-		,f: {x:0, y:0, z:0}
+		f: {x:0, y:0, z:0}
 		,v: {x:0, y:0, z:0}
 		,v1: {x:0, y:0, z:0}
 		,v2: {x:0, y:0, z:0}
-		,camera: {x:0, y:0}
+		,camera: {x:0, y:0, z:0}
 	}
-	,verbs: {
-		hunter: 
-			[ Verb('walk',['front'])
-			, Verb('walk',['left'])
-			, Verb('walk',['right'])
-			, Verb('walk',['back'])
-			, Verb('attack',['front','left','right','back'])
-			, Verb('carry',['front','left','right','back'])
-			]
-
-		,deer: 
-			[ Verb('run', ['right', 'left'])
-			, Verb('die', ['right', 'left'])
-			]
-	}
+	,verbs: {}
 	,characters: {}
 	,elements: {}
 	,frames: {}
 	,camera: { 
 		x: 0
 		, y: 0
+		, z: 0
 		, scale: { x: 1, y: 1 }
 		, target: null
 	}
@@ -89,6 +96,11 @@ const state = {
 }
 
 const Util = {
+	/**
+	 * 
+	 * @param {Provider.Coord} p1 
+	 * @param {Provider.Coord} p2 
+	 */
 	distance(p1, p2){
 		const xs = 
 			[p2.x - p1.x].map( x => x * x )
@@ -96,7 +108,10 @@ const Util = {
 		const ys = 
 			[p2.y - p1.y].map( x => x * x )
 			
-		return Math.sqrt( xs[0] + ys[0] )
+		const zs = 
+			[p2.z - p1.z].map( x => x * x )
+			
+		return Math.sqrt( xs[0] + ys[0] + zs[0] )
 	}
 
 	,random(multiplier=1){
@@ -111,25 +126,55 @@ const Util = {
 
 }
 
-
+/**
+ * 
+ * @param {Provider.State} state 
+ */
 function App(state){
 
+	state.verbs[hunter] =
+
+		[ Verb('walk',['front'])
+		, Verb('walk',['left'])
+		, Verb('walk',['right'])
+		, Verb('walk',['back'])
+		, Verb('attack',['front','left','right','back'])
+		, Verb('carry',['front','left','right','back'])
+		]
+
+	state.verbs[deer] =
+
+		[ Verb('run', ['right', 'left'])
+		, Verb('die', ['right', 'left'])
+		]
+
 	const SND = {
+
+		/** @param {HTMLAudioElement} audio */
 		play(audio){
 			if( !state.mute ){
 				audio.play()
 			}
-		}
-		,pause(audio){
+		},
+		
+		/** @param {HTMLAudioElement} audio */
+		pause(audio){
 			audio.pause()
-		}
-		,volume(audio, x){
+		},
+
+		/** @param {HTMLAudioElement} audio */
+		/** @param {number} x */
+		volume(audio, x){
 			if(!state.mute){
 				audio.volume = x
 			}
 		}
 	}
 
+	/**
+	 * 
+	 * @param {boolean} x 
+	 */
 	function setMute(x){
 
 		state.mute = x
@@ -139,18 +184,25 @@ function App(state){
 			.map(function(k){
 				return state.resources.snd[k]
 			})
-			.filter( o => o.element )
+			.filter( o => o.element != null )
+			
 			.forEach(function(o){
 				if( state.mute ){
+					// @ts-ignore
 					o.element.volume = 0
 				} else {
+					// typescript still things this is null :O
+					// @ts-ignore
 					o.element.volume = 1
 				}	
 			})
 	}
 
+	/**
+	 * @param {KeyboardEvent} e
+	 */
 	// eslint-disable-next-line no-undef
-	window.onkeyup = e => {
+	window.onkeyup = (e) => {
 		if( e.keyCode == 77 /* M */){
 			
 			setMute(!state.mute)
@@ -158,6 +210,9 @@ function App(state){
 		delete state.keys.DOWN[e.keyCode]
 	}
 
+	/**
+	 * @param {KeyboardEvent} e
+	 */
 	// eslint-disable-next-line no-undef
 	window.onkeydown = e => {
 		if( !(e.keyCode in state.keys.DOWN) ){
@@ -180,77 +235,105 @@ function App(state){
 				, repeat: true
 				, scale: 1
 			}
-		}
+		},
+
+
+
+		/**
+		 * @param {Provider.Frame} frame
+		 */
+		onload(frame){
+			if( frame.imageId != null ){
+				const image =
+					state.resources.img[frame.imageId].element
+
+				if ( image != null ){
+
+					frame.count = 
+						image.width / image.height
 		
-		,onload(frame){
-			const image =
-				state.resources.img[frame.imageId].element
+					// the height of the strip is the width of a frame
+					frame.width = image.height
+		
+				}
 
-			frame.count = 
-				image.width / image.height
+				frame.index = 0
+			}
+		},
 
-			// the height of the strip is the width of a frame
-			frame.width = image.height
-
-			frame.index = 0
-		}
-
-		,reset(frame, imageId){
+		/**
+		 * @param {Provider.Frame} frame
+		 * @param {string} imageId
+		 */
+		reset(frame, imageId){
 			const image = 
 				state.resources.img[imageId].element
 
 			frame.imageId = imageId
 
-			if( image.complete ){
-				Frame.onload(frame)
-			} else {
-				image.onload = () => 
+			if(image != null){
+
+				if( image.complete ){
 					Frame.onload(frame)
+				} else {
+					image.onload = () => 
+						Frame.onload(frame)
+				}
+	
+				// todo-james why is this happening here?
+				frame.count = image.width / image.height
+				frame.width = image.height
 			}
-
-			// todo-james why is this happening here?
-			frame.count = image.width / image.height
-			frame.width = image.height
 			frame.index = 0
-		}
+		},
 
-		,draw(frame){
-			const image =
-				state.resources.img[frame.imageId].element
+		/**
+		 * @param {Provider.Frame} frame
+		 */
+		draw(frame){
 
-			if( image.complete ){
+			if( frame.imageId != null ){
 
-				const sx = 
-					Math.floor(frame.index)*frame.width
-
-				const sy = 0
-				const sWidth = frame.width
-				const sHeight = frame.width
-				const dx = -frame.width / 2
-				const dy = -frame.width / 2
-				const dWidth = frame.width
-				const dHeight = frame.width
-
-				con.drawImage(
-					image
-					, sx
-					, sy
-					, sWidth
-					, sHeight
-					, dx
-					, dy
-					, dWidth
-					, dHeight
-				
-				)
+				const image =
+					state.resources.img[frame.imageId].element
+	
+				if( image != null && image.complete ){
+	
+					const sx = 
+						Math.floor(frame.index)*frame.width;
+	
+					const sy = 0;
+					const sWidth = frame.width;
+					const sHeight = frame.width;
+					const dx = frame.width / 2;
+					const dy = frame.width / 2;
+					const dWidth = frame.width;
+					const dHeight = frame.width;
+	
+					con.drawImage(
+						image
+						, sx
+						, sy
+						, sWidth
+						, sHeight
+						, dx
+						, dy
+						, dWidth
+						, dHeight
+					
+					)
+				}
 			}
-		}
+		},
 
-		,next(frame){
+		/**
+		 * @param {Provider.Frame} frame
+		 */
+		next(frame){
 			Frame.draw(frame)
 			frame.index = frame.index + frame.playspeed
 			
-			if( Math.floor(frame.index)+1 > frame.count ){
+			if( Math.floor(frame.index) +1 > frame.count ){
 				if( frame.repeat ){
 					frame.index = 0
 				} else {
@@ -261,22 +344,37 @@ function App(state){
 	}
 
 	const Character = {
-		of({ id, verbs }){
 		
+		/**
+		 
+		 @param {{ 
+			 id:string 
+			 name: string
+			 verbs: Provider.Verb[] 
+			 position: string
+		}} o 
+		 @returns { Provider.Character }
+		 */
+		of(o){
+			const { id, name, verbs, position } = o
 			return { 
 				id
+				, name
 				, verbs
 				, imageId: null 
-				, position: null
+				, position
 				, idles: {}
 				, speed: 4
 				, action: 'idle'
 				, alive: true
 				, respawnId: null
 			}
-		}
+		},
 
-		,initSprites( character ){
+		/**
+		 * @param { Provider.Character } character
+		 */
+		initSprites( character ){
 
 			let positions = []
 			for( let verb of character.verbs ){
@@ -287,7 +385,7 @@ function App(state){
 
 					const src =
 						'resources/img/original/characters/'
-							+ character.id
+							+ character.name
 							+ '/'+position
 							+ '_'+verb.name+'.png'
 
@@ -313,7 +411,7 @@ function App(state){
 
 				const src =
 					'resources/img/original/characters/'
-						+ character.id
+						+ character.name
 						+ '/'+position
 						+ '_idle.png'
 
@@ -329,9 +427,14 @@ function App(state){
 
 			character.position = positions[0]
 		
-		}
+		},
 
-		,update(o){
+		/**
+		 * 
+		 * @param {Provider.Character} o 
+		 */
+		update(o){
+
 			for( let verb of o.verbs ){
 				if( 
 					o.action == verb.name 
@@ -359,15 +462,27 @@ function App(state){
 
 	// set playspeed to 1/8
 	const Deer = {
+
+		/**
+		 * 
+		 * @param {string} id 
+		 * @returns {Provider.Deer}
+		 */
 		of(id){
 			return {
 				spawnRadius: 5
 				,id
+				,respawnId: null
 			}
-		}
+		},
 
+		/**
+		 * 
+		 * @param {Provider.Deer} deer 
+		 * @param {Provider.Hunter} other 
+		 */
 		// todo pass in an id not an object for other
-		,canSee(deer, other){
+		canSee(deer, other){
 			const [me, them] = 
 				[ deer.id, other.id ]
 					.map(
@@ -390,9 +505,14 @@ function App(state){
 				&& me.p.y - 50 < them.p.y
 				&& them.p.y < me.p.y + 50
 			) 
-		}
+		},
 
-		,act(deer, other){
+
+		/**
+		 * @param {Provider.Deer} deer 
+		 * @param {Provider.Hunter} other 
+		 */
+		act(deer, other){
 			const [me, them] = 
 				[ deer.id, other.id ]
 					.map(
@@ -423,9 +543,13 @@ function App(state){
 			} else {
 				me.c.action = 'idle'
 			}
-		}
+		},
 
-		,respawn(deer){
+
+		/**
+		 * @param {Provider.Deer} deer 
+		 */
+		respawn(deer){
 
 			const [me] = 
 				[ deer.id ]
@@ -446,23 +570,23 @@ function App(state){
 				me.c.position == 'right' ? 'left' : 'right'
 			state.frames[me.c.id].repeat = true
 			deer.spawnRadius = deer.spawnRadius + 10
-		}
+		},
 
-		,system(){
+		system(){
 			
-			Deer.act(state.deer.deer, state.hunter.hunter)
+			Deer.act(state.deer[deer], state.hunter[hunter])
 			
 			if( 
-				state.characters.deer.alive == false 
-				&& state.deer.deer.respawnId == null 
+				state.characters[deer].alive == false 
+				&& state.deer[deer].respawnId == null 
 			) {
 
-				state.deer.deer.respawnId = 
+				state.deer[deer].respawnId = 
 					// eslint-disable-next-line no-undef
 					setTimeout( 
 						() => {
-							Deer.respawn(state.deer.deer)
-							state.deer.deer.respawnId = null
+							Deer.respawn(state.deer[deer])
+							state.deer[deer].respawnId = null
 						}
 						, 2000 
 					)
@@ -472,12 +596,27 @@ function App(state){
 	}
 
 	const Element = {
+		/**
+		 * @param {string} id 
+		 * @returns {Provider.Element}
+		 */
 		of(id){
 			return {
 				id
 			}
-		}
-		,init({ id }, src, { x, y } ){
+		},
+		
+		/**
+		 * 
+		 * @param {Provider.Element} element 
+		 * @param {string} src 
+		 * @param {Provider.Coord} coords 
+		 */
+		init(element, src, coords){
+
+			const { id } = element
+			const { x, y, z } = coords
+
 			// eslint-disable-next-line no-undef
 			const image = new Image()
 			
@@ -492,11 +631,16 @@ function App(state){
 
 			Frame.reset(state.frames[id], src)
 
-			state.coords[id] = { x, y }
+			state.coords[id] = { x, y, z }
 		}
 	}
 
 	const Hunter = {
+		/**
+		 * 
+		 * @param {string} id 
+		 * @returns {Provider.Hunter}
+		 */
 		of(id){
 			return {
 				day: 0
@@ -510,11 +654,16 @@ function App(state){
 				,id
 				,status: 'peckish'
 			}
-		}
+		},
 		
-		,statuses: [ 'starving', 'hungry', 'peckish', 'healthy']
+		statuses: [ 'starving', 'hungry', 'peckish', 'healthy'],
 
-		,kill(hunter, deer){
+		/**
+		 * 
+		 * @param {Provider.Hunter} hunter 
+		 * @param {Provider.Deer} deer 
+		 */
+		kill(hunter, deer){
 			
 			const [me, them] = 
 				[ hunter.id, deer.id ]
@@ -530,25 +679,37 @@ function App(state){
 				if( them.c.alive ){
 					them.c.alive = false
 					hunter.carrying = true
-					state.resources.snd.drum2.element
-						.currentTime = 1
-					SND.play(
+					if ( state.resources.snd.drum2.element != null ){
 						state.resources.snd.drum2.element
-					)
+							.currentTime = 1
+						SND.play(
+							state.resources.snd.drum2.element
+						)
+					}
 				} else {
-					state.resources.snd.drum2.element
-						.currentTime = 1
-					SND.play(state.resources.snd.drum4.element)
+					if( state.resources.snd.drum4.element != null ){
+						state.resources.snd.drum4.element
+							.currentTime = 1
+						
+						SND.play(state.resources.snd.drum4.element)
+					}
 				}
 			} else {
-				state.resources.snd.drum2.element
-					.currentTime = 1
-				SND.play(state.resources.snd.drum3.element)
+				if( state.resources.snd.drum3.element != null){
+
+					state.resources.snd.drum3.element
+						.currentTime = 1
+
+					SND.play(state.resources.snd.drum3.element)
+				}
 
 			}
-		}
+		},
 
-		,hunger(hunter){
+		/**
+		 * @param {Provider.Hunter} hunter 
+		 */
+		hunger(hunter){
 			const { status, id, day, family } = hunter
 			const statuses = Hunter.statuses
 
@@ -565,7 +726,7 @@ function App(state){
 			if( status == 'starving' ){
 				if( me.c.alive ){
 					me.c.alive = false
-					me.c.status = 'dead'
+					hunter.status = 'dead'
 					// eslint-disable-next-line no-undef, no-console
 					console.log( 
 						'you lasted '+day+' days but you have starved...' 
@@ -589,15 +750,20 @@ function App(state){
 
 			family.status =
 				statuses[statuses.indexOf(status) - 1] || family.status
-		}
+		},
 
-		,eat(hunter){
+		/**
+		 * @param {Provider.Hunter} hunter
+		 */
+		eat(hunter){
 			
 			const { status, family } = hunter
 
 			const statuses = Hunter.statuses
 
-			SND.play(state.resources.snd.drum5.element)
+			if( state.resources.snd.drum5.element != null ){
+				SND.play(state.resources.snd.drum5.element)
+			}
 
 			// eslint-disable-next-line no-undef, no-console
 			console.log('eat')
@@ -608,10 +774,16 @@ function App(state){
 			if( family.status == 'healthy' && family.adults > 0 ){
 				family.children ++ 
 			}
-		}
+		},
 
-		,feed(hunter){
-			SND.play(state.resources.snd.drum6.element)
+		/**
+		 * @param {Provider.Hunter} hunter 
+		 */
+		feed(hunter){
+
+			if( state.resources.snd.drum6.element != null ){
+				SND.play(state.resources.snd.drum6.element)
+			}
 
 			hunter.family.status = 
 				Hunter.statuses
@@ -621,9 +793,13 @@ function App(state){
 			if( hunter.family.status == 'healthy' && hunter.family.adults > 0 ){
 				hunter.family.children ++ 
 			}
-		}
+		},
 
-		,act(hunter, deer){
+		/**
+		 * @param {Provider.Hunter} hunter
+		 * @param {Provider.Deer} deer
+		 */
+		act(hunter, deer){
 			
 			const {
 				id
@@ -669,7 +845,7 @@ function App(state){
 
 					me.c.action = "walk"
 					hunter.carrying = false
-					if (Util.distance(me.p,{x:0,y:0})<75){
+					if (Util.distance(me.p,{x:0,y:0,z:0})<75){
 						Hunter.feed(hunter)
 					} else {
 						Hunter.eat(hunter)
@@ -699,23 +875,26 @@ function App(state){
 			}
 
 			if (me.c.action == "walk"){
-				
-				SND.play(state.resources.snd.walk.element)
-				if (state.resources.snd.walk.element.currentTime>4){
-					state.resources.snd.walk.element.currentTime = 0
+				if( state.resources.snd.walk.element != null ){
+					SND.play(state.resources.snd.walk.element)
+					if (state.resources.snd.walk.element.currentTime>4){
+						state.resources.snd.walk.element.currentTime = 0
+					}
 				}
 			} else {
-				state.resources.snd.walk.element.pause()  
+				if( state.resources.snd.walk.element != null ){
+					state.resources.snd.walk.element.pause()  
+				}
 			}
 		}
 
 		,system(){
-			return Hunter.act(state.hunter.hunter, state.deer.deer)
+			return Hunter.act(state.hunter[hunter], state.deer[deer])
 		}
 	}
 
-	state.hunter.hunter = Hunter.of('hunter')
-	state.deer.deer = Deer.of('deer')
+	state.hunter[hunter] = Hunter.of(hunter)
+	state.deer[deer] = Deer.of(deer)
 
 	state.elements.f = 
 		Element.of( 'f' )
@@ -723,44 +902,46 @@ function App(state){
 	Element.init(
 		state.elements.f
 		, "resources/img/original/elements/fire/idle.png"
-		, { x: 0, y: 0 } 
+		, { x: 0, y: 0, z: 0 } 
 	)
 
 		
-	state.frames.deer = Frame.of()
-	state.frames.deer.scale = 4
+	state.frames[deer] = Frame.of()
+	state.frames[deer].scale = 4
 
-	state.coords.deer.x = 60
-	state.coords.deer.y = -100
-
-	state.characters.deer =
+	state.coords[deer] = { x: 60, y: -100, z: 0 }
+	
+	state.characters[deer] =
 		Character.of({
-			id: 'deer'
-			,verbs: state.verbs.deer
+			id: deer
+			,name: 'deer'
+			,verbs: state.verbs[deer]
+			,position: 'left'
 		})
 
-	Character.initSprites( state.characters.deer )
+	Character.initSprites( state.characters[deer] )
 
 
-	state.frames.hunter = Frame.of()
-	state.frames.hunter.scale = 4
+	state.frames[hunter] = Frame.of()
+	state.frames[hunter].scale = 4
 
-	state.coords.hunter.x = 100
-	state.coords.hunter.y = 40
+	state.coords[hunter] = { x: 100, y: 40, z: 0 }
 
-	state.characters.hunter =
+	state.characters[hunter] =
 		Character.of({
-			id: 'hunter'
-			,verbs: state.verbs.hunter
+			id: hunter
+			,name: 'hunter'
+			,verbs: state.verbs[hunter]
+			,position: 'left'
 		})
 
-	Character.initSprites( state.characters.hunter )
+	Character.initSprites( state.characters[hunter] )
 
 	let timeOfDay = 0
 	let increment = 0.1
 
 	function systems$night(){
-		const c = state.hunter.hunter
+		const c = state.hunter[hunter]
 		timeOfDay = timeOfDay + increment
 		if( timeOfDay > 1 ){
 			increment = -0.0125
@@ -768,8 +949,10 @@ function App(state){
 			increment = 0.0125
 			c.day = c.day + 1
 			Hunter.hunger(c)
-			
-			SND.play( state.resources.snd.drum1.element )
+
+			if(state.resources.snd.drum1.element != null){
+				SND.play( state.resources.snd.drum1.element )
+			}
 
 			if( c.day % 10 == 0 && c.family.children > 0 ){
 				c.family.adults = c.family.adults + 1
@@ -783,12 +966,14 @@ function App(state){
 			const sndId = state.loopingSounds[k]
 			const sndResource = state.resources.snd[sndId]
 
-			if(SND.currentTime == 0){
-				SND.play(sndResource.element)
-			}
-
-			if( sndResource.element.currentTime > 8 ){
-				sndResource.element.currentTime = 0
+			if( sndResource.element != null ){
+				if(SND.currentTime == 0){
+					SND.play(sndResource.element)
+				}
+	
+				if( sndResource.element.currentTime > 8 ){
+					sndResource.element.currentTime = 0
+				}
 			}
 			
 		})
@@ -802,14 +987,15 @@ function App(state){
 				1-Math.min(1, Util.distance(sndObj.coords,state.camera) / 1000 )
 			
 			if( volume > 0 && volume < 1 ){
-				SND.volume(sndResource.element, volume)
+				if(sndResource.element != null){
+					SND.volume(sndResource.element, volume)
+				}
 			}
 		})
 	}
 		
 
 	function systems$prepCanvas(){
-		
 		// eslint-disable-next-line no-undef
 		can.width = window.innerWidth
 		// eslint-disable-next-line no-undef
@@ -851,11 +1037,16 @@ function App(state){
 	}
 
 	function systems$camera(){
-		const target = state.coords[ state.camera.target ]
-		
-		if( Util.distance(state.camera, target) > 10 ){
-			state.camera.x = state.camera.x + (target.x - state.camera.x) * 0.05
-			state.camera.y = state.camera.y + (target.y - state.camera.y) * 0.05
+		if( state.camera.target != null ){
+
+			const target = state.coords[ state.camera.target ]
+			
+			if( Util.distance(state.camera, target) > 10 ){
+				state.camera.x = 
+					state.camera.x + (target.x - state.camera.x) * 0.05
+				state.camera.y = 
+					state.camera.y + (target.y - state.camera.y) * 0.05
+			}
 		}
 	}
 
@@ -870,7 +1061,7 @@ function App(state){
 
 
 	function system$village(){
-		const c = state.hunter.hunter
+		const c = state.hunter[hunter]
 		if( c.family.children + c.family.adults > 0 ){
 
 			state.elements.v2 = 
@@ -879,7 +1070,7 @@ function App(state){
 			Element.init(
 				state.elements.v2
 				, "resources/img/original/elements/villager/idle.png"
-				, { x: -25, y: -25 } 
+				, { x: -25, y: -25, z: 0 } 
 			)
 
 		} else {
@@ -893,7 +1084,7 @@ function App(state){
 			Element.init(
 				state.elements.v
 				, "resources/img/original/elements/villager/idle.png"
-				, { x: -25, y: -25 } 
+				, { x: -25, y: -25, z: 0 } 
 			)
 	
 		} else {
@@ -907,7 +1098,7 @@ function App(state){
 			Element.init(
 				state.elements.v3
 				, "resources/img/original/elements/villager/idle.png"
-				, { x: 25, y: -25 } 
+				, { x: 25, y: -25, z: 0 } 
 			)
 
 		} else {
@@ -931,7 +1122,7 @@ function App(state){
 	}
 
 	function systems$ui(){
-		const c = state.hunter.hunter
+		const c = state.hunter[hunter]
 
 		m.render(
 			// eslint-disable-next-line no-undef
@@ -983,7 +1174,7 @@ function App(state){
 						,m('p#adviceDisplay'
 							, c.carrying
 							? Util.distance( 
-								state.characters[c.id], {x:0,y:0}
+								state.coords[c.id], {x:0,y:0,z:0}
 							) > 75
 								? 'Eat: (F)'
 								: 'Feed Village: (F)'
@@ -1013,9 +1204,11 @@ function App(state){
 		loop(){
 
 			// eslint-disable-next-line no-undef
-			SND.play( state.resources.snd.fire.element )
+			if ( state.resources.snd.fire.element != null ){
+				SND.play( state.resources.snd.fire.element )
+			}
 
-			const c = state.hunter.hunter
+			const c = state.hunter[hunter]
 			state.camera.target = c.id
 
 			if( !paused ){
@@ -1038,14 +1231,18 @@ function App(state){
 		}
 
 		,status(){
-			const c = state.hunter.hunter
+			const c = state.hunter[hunter]
 			if( !state.characters[c.id].alive ){
 		
 				//eslint-disable-next-line no-undef
 				paused = true
 
-				SND.pause( state.resources.snd.fire.element )
-				SND.pause( state.resources.snd.walk.element )
+				if( state.resources.snd.fire.element != null ){
+					SND.pause( state.resources.snd.fire.element )
+				}
+				if( state.resources.snd.walk.element != null ){
+					SND.pause( state.resources.snd.walk.element )
+				}
 				
 				//eslint-disable-next-line no-undef
 				game.restartID = setTimeout(game.restart,8000)
@@ -1053,8 +1250,8 @@ function App(state){
 		}
 
 		,restart(){
-			const c = state.hunter.hunter
-			const d = state.deer.deer
+			const c = state.hunter[hunter]
+			const d = state.deer[deer]
 
 			c.day = 1
 			c.carrying = false
@@ -1065,13 +1262,13 @@ function App(state){
 				,starved: 0
 			}
 			c.status = 'peckish'
-			state.coords.hunter.x = 100 * Util.random() * Util.even()
-			state.coords.hunter.y = 40 * Util.random() * Util.even()
-			state.coords.deer.x = -60
-			state.coords.deer.y = -100
+			state.coords[hunter].x = 100 * Util.random() * Util.even()
+			state.coords[hunter].y = 40 * Util.random() * Util.even()
+			state.coords[deer].x = -60
+			state.coords[deer].y = -100
 
-			state.camera.x = state.coords.hunter.x
-			state.camera.y = state.coords.hunter.y - 10000
+			state.camera.x = state.coords[hunter].x
+			state.camera.y = state.coords[hunter].y - 10000
 
 			d.spawnRadius = 5
 			state.characters[c.id].alive = true
@@ -1082,12 +1279,12 @@ function App(state){
 	}
 
 
-	state.camera.x = state.coords.hunter.x
-	state.camera.y = state.coords.hunter.y - 10000
+	state.camera.x = state.coords[hunter].x
+	state.camera.y = state.coords[hunter].y - 10000
 	systems$initAudioResources()
 	state.spatialSounds.fire = {
 		snd: 'fire'
-		,coords: state.elements.f
+		,coords: state.coords.f
 	}
 	systems$ui()
 		
@@ -1095,9 +1292,13 @@ function App(state){
 	state.loopingSounds.fire = 'fire'
 	
 
-	// eslint-disable-next-line no-undef
-	const can = document.getElementById('c')
-	const con = can.getContext('2d')
+	const can = /** @type {HTMLCanvasElement} */ (
+		// eslint-disable-next-line no-undef
+		document.getElementById('c')
+	)
+	const con = /** @type {CanvasRenderingContext2D} */ (
+		can.getContext('2d')
+	)
 
 	// eslint-disable-next-line no-undef
 	requestAnimationFrame(game.loop)
