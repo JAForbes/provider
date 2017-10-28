@@ -13,10 +13,8 @@ export type Coord = {
 export type Character = {
     id: string
     name: string
-    verbs: Verb[]
     imageId: string | null
     position: string
-    idles: { [index:string]: string }
     speed: number
     action: string
     alive: boolean

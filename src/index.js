@@ -132,22 +132,6 @@ const Util = {
  */
 function App(state){
 
-	state.verbs[hunter] =
-
-		[ Verb('walk',['front'])
-		, Verb('walk',['left'])
-		, Verb('walk',['right'])
-		, Verb('walk',['back'])
-		, Verb('attack',['front','left','right','back'])
-		, Verb('carry',['front','left','right','back'])
-		]
-
-	state.verbs[deer] =
-
-		[ Verb('run', ['right', 'left'])
-		, Verb('die', ['right', 'left'])
-		]
-
 	const SND = {
 
 		/** @param {HTMLAudioElement} audio */
@@ -350,20 +334,17 @@ function App(state){
 		 @param {{ 
 			 id:string 
 			 name: string
-			 verbs: Provider.Verb[] 
 			 position: string
 		}} o 
 		 @returns { Provider.Character }
 		 */
 		of(o){
-			const { id, name, verbs, position } = o
+			const { id, name, position } = o
 			return { 
 				id
 				, name
-				, verbs
 				, imageId: null 
 				, position
-				, idles: {}
 				, speed: 4
 				, action: 'idle'
 				, alive: true
@@ -376,8 +357,9 @@ function App(state){
 		 */
 		initSprites( character ){
 
-			let positions = []
-			for( let verb of character.verbs ){
+			const verbs = state.verbs[character.id]
+
+			for( let verb of verbs ){
 				for( let position of verb.positions ){
 
 					// eslint-disable-next-line no-undef
@@ -396,37 +378,9 @@ function App(state){
 						element:image
 						,src
 					}
-					
-
-					if( positions.indexOf(position) == -1 ){
-						positions.push( position )
-					}
 				}
 			}
 
-			for( let position of positions ){
-
-				// eslint-disable-next-line no-undef
-				const image = new Image()
-
-				const src =
-					'resources/img/original/characters/'
-						+ character.name
-						+ '/'+position
-						+ '_idle.png'
-
-				image.src = src
-				character.idles[position] = src
-
-				state.resources.img[src] = {
-					element:image
-					,src
-				}
-
-			}
-
-			character.position = positions[0]
-		
 		},
 
 		/**
@@ -434,8 +388,10 @@ function App(state){
 		 * @param {Provider.Character} o 
 		 */
 		update(o){
+			
+			const verbs = state.verbs[o.id]
 
-			for( let verb of o.verbs ){
+			for( let verb of verbs ){
 				if( 
 					o.action == verb.name 
 					&& verb.positions.indexOf(o.position) > -1 
@@ -448,13 +404,6 @@ function App(state){
 						)
 					}
 					break
-				}
-			}
-
-			if( o.action == 'idle' ){
-				if( o.imageId != o.idles[o.position] ){
-					o.imageId = o.idles[o.position]
-					Frame.reset(state.frames[o.id], o.idles[o.position])
 				}
 			}
 		}
@@ -893,6 +842,16 @@ function App(state){
 		}
 	}
 
+	state.verbs[hunter] = 
+		[ Verb('idle', ['front', 'left', 'right', 'back'])
+		, Verb('walk',['front'])
+		, Verb('walk',['left'])
+		, Verb('walk',['right'])
+		, Verb('walk',['back'])
+		, Verb('attack',['front','left','right','back'])
+		, Verb('carry',['front','left','right','back'])
+		]
+
 	state.hunter[hunter] = Hunter.of(hunter)
 	state.deer[deer] = Deer.of(deer)
 
@@ -910,12 +869,16 @@ function App(state){
 	state.frames[deer].scale = 4
 
 	state.coords[deer] = { x: 60, y: -100, z: 0 }
-	
+	state.verbs[deer] =
+		[ Verb('idle', ['left', 'right'])
+		, Verb('run', ['right', 'left'])
+		, Verb('die', ['right', 'left'])
+		]
+		
 	state.characters[deer] =
 		Character.of({
 			id: deer
 			,name: 'deer'
-			,verbs: state.verbs[deer]
 			,position: 'left'
 		})
 
@@ -931,7 +894,6 @@ function App(state){
 		Character.of({
 			id: hunter
 			,name: 'hunter'
-			,verbs: state.verbs[hunter]
 			,position: 'left'
 		})
 
