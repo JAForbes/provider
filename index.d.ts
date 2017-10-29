@@ -62,6 +62,11 @@ export type Camera = {
 
 export type LoopingSound = string
 
+export type Canvas = { 
+    element: HTMLCanvasElement
+    context: CanvasRenderingContext2D 
+}
+
 export type State = {
     keys: { DOWN: { [index:number]: number } }
     mute: boolean
@@ -101,6 +106,9 @@ export type State = {
     }
     loopingSounds: {
         [index:string]: LoopingSound
+    }
+    canvas: {
+        [index:string]: Canvas
     }
 }
 
