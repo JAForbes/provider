@@ -1,5 +1,4 @@
 // @ts-check 
-
 const m = /** @type {any} */ (
 	// @ts-ignore
 	// eslint-disable-next-line
@@ -185,8 +184,9 @@ const Frame = {
 				const sy = 0;
 				const sWidth = frame.width;
 				const sHeight = frame.width;
-				const dx = frame.width / 2;
-				const dy = frame.width / 2;
+				// positioning within the canvas handled by other systems
+				const dx = 0;
+				const dy = 0;
 				const dWidth = frame.width;
 				const dHeight = frame.width;
 
@@ -236,21 +236,15 @@ const Frame = {
 		Object.keys(state.frames)
 		.forEach(function(id){
 			
-			const con = state.canvas.c.context
-
-			con.save()
-			con.scale( state.camera.scale.x, state.camera.scale.y )
-			const coords = state.coords[id]
-			
-			con.translate(coords.x-state.camera.x,coords.y-state.camera.y)
-			
 			const frame = state.frames[id]
-			con.scale(frame.scale, frame.scale)
-			
-			Frame.next(con, state, frame)
-			
-			con.scale(1,1)
-			con.restore()
+			if( id in state.canvas ){
+
+				const canvas = state.canvas[id]
+				const con = canvas.context
+	
+				con.scale(frame.scale, frame.scale)
+				Frame.next(con, state, frame)
+			}
 		})
 	}
 	
@@ -1189,22 +1183,15 @@ const Canvas = {
 	 	}} state 
 	 */
 	system(state){
-		if( state.canvas.c.element != null && state.canvas.c.context != null  ){
+		Object.keys( state.canvas ).forEach(function(id){
+			const canvas = state.canvas[id]
 
-			// eslint-disable-next-line no-undef
-			state.canvas.c.element.width = window.innerWidth
-			// eslint-disable-next-line no-undef
-			state.canvas.c.element.height = window.innerHeight
-			
-			state.canvas.c.element.width = state.canvas.c.element.width
-			state.canvas.c.context.imageSmoothingEnabled = false
-			
-			state.canvas.c.context
-				.translate(
-					state.canvas.c.element.width/2, 
-					state.canvas.c.element.height/2
-				)
-		}
+			if( canvas.element != null ){
+				
+				canvas.element.width = canvas.element.width
+				canvas.context.imageSmoothingEnabled = false
+			}
+		})
 	}
 }
 
@@ -1229,6 +1216,8 @@ const Camera = {
 					state.camera.x + (target.x - state.camera.x) * 0.05
 				state.camera.y = 
 					state.camera.y + (target.y - state.camera.y) * 0.05
+				state.camera.z = 
+					state.camera.z + (target.z - state.camera.z) * 0.05
 			}
 		}
 	}
@@ -1246,12 +1235,103 @@ const UI = {
 			// eslint-disable-next-line no-undef
 			document.body
 			,m('div'
-				,m('canvas.absolute#c'
-					,{ style:
-						{ backgroundColor: 
-							'rgba(0,0,50,'+state.night[night].timeOfDay+')'
+				,{
+					style: {
+						width: '100%',
+						height: '100%',
+						backgroundColor: '#EEEEB8',						
+						overflow: 'hidden'
+					}
+				}
+				,m('div'
+					,{
+						style: {
+							transformStyle: 'preserve-3d'
+							,width: '100%'
+							,height: '100%'
+							,transitionDuration: '1s'
+							,transform:
+								'scale3d('+[
+									state.camera.scale.x
+									, state.camera.scale.y
+									, 1
+								]+')'
 						}
 					}
+					,Object.keys(state.frames).map(function(id){
+						
+						const frame = state.frames[id]
+						const coords = state.coords[id]
+
+						coords.z = coords.y
+						return m('canvas', {
+							id,
+							key: id,
+							style: {
+								top: '0px',
+								left: '0px',
+								position: 'absolute',
+								transform: [
+									'translate('+[
+										'calc( 100vw / 2 - 50%)'
+										,'calc( 100vh / 2 - 50%)'
+									]+')'
+									
+									,'perspective('+500+'px)'
+									
+									,'translate3d('+[
+										(coords.x-state.camera.x)+'px',
+										(coords.y-state.camera.y)+'px',
+										(coords.z-state.camera.z)+'px'
+									]+')'
+									
+								].join(' ')
+							},
+							width: frame.width * frame.scale,
+							height: frame.width * frame.scale,
+							/**
+							 * @param {{ dom: HTMLCanvasElement }} vnode 
+							 */
+							onupdate(vnode){
+								
+								const el = vnode.dom
+
+								const con =
+									el.getContext('2d')
+
+								if( el != null && con != null){
+									state.canvas[id] = {
+										element: el,
+										context: con
+									}
+								}
+							},
+
+							onremove(){
+								if( id in state.canvas ){
+									delete state.canvas[id]
+								}
+							}
+						})
+					})
+					,Object.keys(state.night).map(function(id){
+						const night = state.night[id]
+
+						return m('div'
+							,{
+								position: 'absolute',
+								style: {
+									width: '100%',
+									height: '100%',
+									// saturation
+									mixBlendMode: 'screen',
+									backgroundColor: 
+										'rgba(0,0,50,'+ night.timeOfDay+')'
+									
+								}
+							}
+						)
+					})
 				)
 				,m('.absolute.description'
 					,{ style:
@@ -1365,6 +1445,7 @@ const Game = {
 	 */	
 	init(state){
 
+		window.state = state
 		// eslint-disable-next-line no-undef
 		requestAnimationFrame( () => Game.system(state) )
 
@@ -1386,6 +1467,7 @@ const Game = {
 		
 		state.camera.x = state.coords[hunter].x
 		state.camera.y = state.coords[hunter].y - 10000
+		state.camera.z = state.coords[hunter].z
 		Game.initAudioResources(state)
 		state.spatialSounds.fire = {
 			snd: 'fire'
@@ -1395,26 +1477,6 @@ const Game = {
 		state.loopingSounds.fire = 'fire'
 
 		UI.system(state)
-
-		{
-			
-			const el = 
-			/** @type {HTMLCanvasElement} */ 
-				
-				// eslint-disable-next-line no-undef
-				( document.getElementById('c'))
-
-			const con =
-				el.getContext('2d')
-
-			if( el != null && con != null){
-				state.canvas.c = {
-					element: el,
-					context: con
-				}
-			}
-
-		}
 	},
 
 
@@ -1459,8 +1521,8 @@ const Game = {
 			Frame.system(state)
 			LoopingSounds.system(state)
 			SpatialSounds.system(state)
-			UI.system(state)
 			Game.status(state)
+			UI.system(state)
 		}
 
 		// eslint-disable-next-line no-undef
@@ -1485,7 +1547,7 @@ const Game = {
 			}
 			
 			//eslint-disable-next-line no-undef
-			Game.restartID = setTimeout(Game.restart,8000)
+			Game.restartID = setTimeout(() => Game.restart(state),8000)
 		}
 	},
 
