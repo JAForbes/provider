@@ -1445,7 +1445,10 @@ const Game = {
 	 */	
 	init(state){
 
+		// @ts-ignore
+		// eslint-disable-next-line no-undef
 		window.state = state
+
 		// eslint-disable-next-line no-undef
 		requestAnimationFrame( () => Game.system(state) )
 
