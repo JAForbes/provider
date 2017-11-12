@@ -191,18 +191,24 @@ const Frame = {
 				const dWidth = frame.width;
 				const dHeight = frame.width;
 
-				con.drawImage(
-					image
-					, sx
-					, sy
-					, sWidth
-					, sHeight
-					, dx
-					, dy
-					, dWidth
-					, dHeight
+				if( dWidth > 0 && dHeight > 0 ){
+
+					con.drawImage(
+						image
+						, sx
+						, sy
+						, sWidth
+						, sHeight
+						, dx
+						, dy
+						, dWidth
+						, dHeight
+					
+					)
 				
-				)
+				}
+				
+				
 			}
 		}
 	},
