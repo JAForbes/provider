@@ -106,6 +106,7 @@ const Frame = {
 			, playspeed: 1/8
 			, repeat: true
 			, scale: 1
+			, alpha: 1
 		}
 	},
 
@@ -388,7 +389,7 @@ const Character = {
 			, name
 			, imageId: null 
 			, position
-			, speed: { x: 4, y: 4 }
+			, speed: { x: 4, z: 4 }
 			, action: 'idle'
 			, alive: true
 			, respawnId: null
@@ -472,6 +473,10 @@ const Character = {
 				if( !(o.imageId == verb.images[o.position]) ){
 					o.imageId = verb.images[o.position]
 					
+					const frame = state.frames[o.id]
+
+					// todo-james make family/villager fade if they are starving
+					frame.alpha = 1
 					Frame.reset(
 						state,
 						state.frames[o.id], 
@@ -923,17 +928,17 @@ const Hunter = {
 			, 'starving': [1.5,1/5 * 0.5]
 			}[ status ] || [me.c.speed, state.frames[me.c.id].playspeed]
 
-		me.c.speed = {x: newSpeed, y:newSpeed}
+		me.c.speed = {x: newSpeed, z: newSpeed}
 		state.frames[me.c.id].playspeed = newPlayspeed
 		
 		if( carrying ){
 			me.c.action = 'carry'
 			if (state.keys.DOWN[Keys.ARROW_UP] ){
 				me.c.position = "back"
-				me.p.z = me.p.z-1*me.c.speed.y
+				me.p.z = me.p.z-1*me.c.speed.z
 			} else if (state.keys.DOWN[Keys.ARROW_DOWN]) {
 				me.c.position = "front"
-				me.p.z= me.p.z + 1*me.c.speed.y
+				me.p.z= me.p.z + 1*me.c.speed.z
 			} else if ( state.keys.DOWN[Keys.ARROW_LEFT] ){
 				me.c.position = "left"
 				me.p.x= me.p.x-1*me.c.speed.x
@@ -956,11 +961,11 @@ const Hunter = {
 		} else if ( state.keys.DOWN[Keys.ARROW_UP] ){
 			me.c.action = 'walk'
 			me.c.position = 'back'
-			me.p.z = me.p.z - 1 * me.c.speed.y
+			me.p.z = me.p.z - 1 * me.c.speed.z
 		} else if ( state.keys.DOWN[Keys.ARROW_DOWN] ){
 			me.c.action = 'walk'
 			me.c.position = 'front'
-			me.p.z = me.p.z  +  1 * me.c.speed.y
+			me.p.z = me.p.z  +  1 * me.c.speed.z
 		} else if ( state.keys.DOWN[Keys.ARROW_LEFT] ){
 			me.c.action = 'walk'
 			me.c.position = 'left'
@@ -1240,14 +1245,33 @@ const UI = {
 						width: '100%',
 						height: '100%',
 						backgroundColor: '#EEEEB8',						
-						overflow: 'hidden'
+					//	overflow: 'hidden'
 					}
 				}
+				,Object.keys(state.night).map(function(id){
+					const night = state.night[id]
+
+					return m('div'
+						,{
+							style: {
+								width: '100vw',
+								height: '100vh',
+								top: '0px',
+								left: '0px',
+								position: 'absolute',
+								mixinMode: 'screen',
+								opacity: night.timeOfDay,
+								backgroundColor: 
+									'rgb(0,0,50)'
+								
+							}
+						}
+					)
+				})
 				,m('div'
 					,{
 						style: {
-							transformStyle: 'preserve-3d'
-							,width: '100%'
+							width: '100%'
 							,height: '100%'
 							,transitionDuration: '1s'
 							,transform:
@@ -1259,82 +1283,147 @@ const UI = {
 								]+')'
 						}
 					}
-					,Object.keys(state.frames).map(function(id){
-						
-						const frame = state.frames[id]
-						const coords = state.coords[id]
-
-						return m('canvas', {
-							id,
-							key: id,
+					,m('div#camera-indicators'
+						,{
 							style: {
-								top: '0px',
-								left: '0px',
-								position: 'absolute',
-								transform: [
-									'translate('+[
+								position: 'absolute'
+								,transformStyle: 'preserve-3d'
+								,transform: [
+									'translateY(50px)'
+
+									,'translate('+[
 										'calc( 100vw / 2 - 50%)'
 										,'calc( 100vh / 2 - 50%)'
 									]+')'
 									
-									,'perspective('+500+'px)'
-									
+									,'perspective('+512+'px)'
+									,'rotateX(-15deg)'
 									,'translate3d('+[
-										(coords.x-state.camera.x)+'px',
-										(coords.z 
-											+ coords.y 
-											- ( state.camera.z 
-												+ state.camera.y))+'px',
-										(coords.z-state.camera.z)+'px'
+										-state.camera.x+'px'
+										,-state.camera.y+'px'
+										,(-state.camera.z)+'px'
 									]+')'
-									
-								].join(' ')
-							},
-							width: frame.width * frame.scale,
-							height: frame.width * frame.scale,
-							/**
-							 * @param {{ dom: HTMLCanvasElement }} vnode 
-							 */
-							onupdate(vnode){
-								
-								const el = vnode.dom
-
-								const con =
-									el.getContext('2d')
-
-								if( el != null && con != null){
-									state.canvas[id] = {
-										element: el,
-										context: con
-									}
-								}
-							},
-
-							onremove(){
-								if( id in state.canvas ){
-									delete state.canvas[id]
-								}
+								]
+								.join(' ')
+							}
+							
+						}
+						,m('div#ground', {
+							style: {
+								position: 'absolute'
+								, width: '400px'
+								, height: '400px'
+								, imageRendering: 'pixelated'
+								, backgroundImage: 'url(https://cdna.artstation.com/p/assets/images/images/006/295/124/large/sergiu-matei-grass-tile-pixel-art-rpg-top-view-indie-game-dev-matei-sergiu.jpg)'
+								, backgroundRepeat: 'repeat'
+								, backgroundSize: 'calc( 100% * 1/64 )'
+								, opacity: 1
+								, filter: 'brightness(0.5)'
+								, borderRadius: '100%'
+								, transform: 
+									'translateY(-150px) rotateX(90deg) rotateZ(45deg) scale(-1, -1) scale(16, 16)'	
 							}
 						})
-					})
-					,Object.keys(state.night).map(function(id){
-						const night = state.night[id]
-
-						return m('div'
-							,{
-								position: 'absolute',
-								style: {
-									width: '100%',
-									height: '100%',
-									// saturation
-									mixBlendMode: 'screen',
-									backgroundColor: 
-										'rgba(0,0,50,'+ night.timeOfDay+')'
-									
-								}
+						,m('div#mountain', {
+							style: {
+								position: 'absolute'
+								, width: '800px'
+								, height: '600px'
+								, imageRendering: 'pixelated'
+								, backgroundImage: 'url(https://static3.scirra.net/images/newstore/products/3053/ss1.png)'
+								, transform: 
+									'translateZ(-10000px) translateY(-600px) rotateZ(180deg) scale(-1, -1) scale(32, 32)'	
 							}
-						)
-					})
+						})
+						,m('div#feedRadius', {
+							style: {
+
+								position: 'absolute'
+								, width: '150px'
+								, height: '150px'
+								, borderRadius: '100%'
+								, opacity: '0.8'
+								, border: 'solid 5px pink'
+								, transform: 
+									'translate(-50%,-50%) translateY(32px) rotateX(90deg)'	
+							}		
+						})
+					)
+					,m('div#camera-game'
+						,{
+							style: {
+								position: 'absolute'
+								,transformStyle: 'preserve-3d'
+								,transform: [
+									'translateY(50px)'
+									,'translate('+[
+										'calc( 100vw / 2 - 50%)'
+										,'calc( 100vh / 2 - 50%)'
+									]+')'
+									
+									,'perspective('+512+'px)'
+									,'rotateX(-15deg)'
+									,'translate3d('+[
+										-state.camera.x+'px'
+										,-(state.camera.y)+'px'
+										,(-state.camera.z)+'px'
+									]+')'
+								]
+								.join(' ')
+							}
+							
+						}
+						,Object.keys(state.frames).map(function(id){
+							
+							const frame = state.frames[id]
+							const coords = state.coords[id]
+
+							return m('canvas', {
+								id,
+								key: id,
+								style: {
+									top: '0px',
+									left: '0px',
+									position: 'absolute',
+									opacity: frame.alpha,
+									transform: [
+										'translate(-50%, -50%)'
+										,'translate3d('+[
+											coords.x+'px',
+											coords.y +'px',
+											coords.z+'px'
+										]+')'
+										
+									].join(' ')
+								},
+								width: frame.width * frame.scale,
+								height: frame.width * frame.scale,
+								/**
+								 * @param {{ dom: HTMLCanvasElement }} vnode 
+								 */
+								onupdate(vnode){
+									
+									const el = vnode.dom
+
+									const con =
+										el.getContext('2d')
+
+									if( el != null && con != null){
+										state.canvas[id] = {
+											element: el,
+											context: con
+										}
+									}
+								},
+
+								onremove(){
+									if( id in state.canvas ){
+										delete state.canvas[id]
+									}
+								}
+							})
+						})
+					)
 				)
 				,m('.absolute.description'
 					,{ style:
@@ -1406,34 +1495,56 @@ const Villager = {
 	 */
 	system(state){
 		const c = state.hunter[hunter]
-		if( c.family.children + c.family.adults > 0 ){
 	
-			Character.initSimpleCharacter(
-				state, 'v2', 'villager', { x: -30, y: 0, z: -30 } 
-			)
-	
-		} else {
-			delete state.characters.v2s
+		{
+			const exists = 'v2' in state.characters
+			const shouldExist = c.family.children + c.family.adults > 0 
+
+			if( shouldExist && !exists ){
+				Character.initSimpleCharacter(
+					state, 'v2', 'villager', { x: -30, y: 0, z: -20 } 
+				)
+			} else if(!shouldExist && exists) {
+				Object.keys(state).forEach(function(component){
+					// @ts-ignore
+					// eslint-disable-next-line fp/no-mutation
+					delete state[component].v2
+				})
+			}
+		}
+
+		{
+			const exists = 'v' in state.characters
+			const shouldExist = c.family.children+c.family.adults > 4
+
+			if( shouldExist && !exists ){
+				Character.initSimpleCharacter(
+					state, 'v', 'villager', { x: 0, y: 0, z: -40 } 
+				)
+			} else if(!shouldExist && exists) {
+				Object.keys(state).forEach(function(component){
+					// @ts-ignore
+					// eslint-disable-next-line fp/no-mutation
+					delete state[component].v
+				})
+			}
 		}
 	
-		if (c.family.children+c.family.adults > 4){
-	
-			Character.initSimpleCharacter(
-				state, 'v', 'villager', { x: 0, y: 0, z: -40 } 
-			)
-	
-		} else {
-			delete state.characters.v
-		}
-	
-		if (c.family.children+c.family.adults > 8){
-	
-			Character.initSimpleCharacter(
-				state, 'v3', 'villager', { x: 30, y: 0, z: -30 }
-			)
-	
-		} else {
-			delete state.characters.v3
+		{
+			const exists = 'v3' in state.characters
+			const shouldExist = c.family.children+c.family.adults > 8
+
+			if( shouldExist && !exists ){
+				Character.initSimpleCharacter(
+					state, 'v3', 'villager', { x: 30, y: 0, z: -20 } 
+				)
+			} else if(!shouldExist && exists) {
+				Object.keys(state).forEach(function(component){
+					// @ts-ignore
+					// eslint-disable-next-line fp/no-mutation
+					delete state[component].v3
+				})
+			}
 		}
 	}
 }
@@ -1460,6 +1571,8 @@ const Game = {
 
 		Keys.init(state)
 		Night.init(state, night)
+
+
 		Deer.init(state, deer)
 		Hunter.init(state, hunter)
 
@@ -1467,16 +1580,16 @@ const Game = {
 			state, 
 			'f', 
 			'fire', 
-			{ x:0, y:0, z:0 }
+			{ x:0, y:20, z:0 }
 		)
 		
 		
-		state.camera.x = state.coords[hunter].x 
-			+ Util.even() * Util.random() * 10000
-		state.camera.y = state.coords[hunter].y 
-			+ Util.even() * Util.random() * 10000
-		state.camera.z = state.coords[hunter].z
-			+ Util.even() * Util.random() * 10000
+		state.camera.x = 0//state.coords[hunter].x 
+			// + Util.even() * Util.random() * 10000
+		state.camera.y = -1000
+			// + 50 + Util.random() * 10000
+		state.camera.z = 3000//state.coords[hunter].z
+			// + Util.even() * Util.random() * 10000
 
 		Game.initAudioResources(state)
 		state.spatialSounds.fire = {
@@ -1532,8 +1645,9 @@ const Game = {
 			LoopingSounds.system(state)
 			SpatialSounds.system(state)
 			Game.status(state)
-			UI.system(state)
 		}
+		
+		UI.system(state)
 
 		// eslint-disable-next-line no-undef
 		requestAnimationFrame( () => Game.system(state) )
@@ -1577,6 +1691,7 @@ const Game = {
 			,starved: 0
 		}
 		c.status = 'peckish'
+
 		state.coords[hunter].x = 100 * Util.random() * Util.even()
 		state.coords[hunter].z = 40 * Util.random() * Util.even()
 		state.coords[deer].x = -60

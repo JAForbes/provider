@@ -15,7 +15,7 @@ export type Character = {
     name: string
     imageId: string | null
     position: string
-    speed: { x: number, y: number }
+    speed: { x: number, z: number }
     action: string
     alive: boolean
     respawnId: number | null
@@ -29,6 +29,7 @@ export type Frame = {
     playspeed: number
     repeat: boolean
     scale: number
+    alpha: number
 }
 
 export type Hunter = {
