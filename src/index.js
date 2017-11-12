@@ -1281,7 +1281,9 @@ const UI = {
 									
 									,'translate3d('+[
 										(coords.x-state.camera.x)+'px',
-										(coords.z + coords.y-state.camera.y)+'px',
+										(coords.z 
+											+ coords.y-state.camera.y
+										)+'px',
 										(coords.z-state.camera.z)+'px'
 									]+')'
 									
