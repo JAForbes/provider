@@ -15,7 +15,7 @@ export type Character = {
     name: string
     imageId: string | null
     position: string
-    speed: number
+    speed: { x: number, y: number }
     action: string
     alive: boolean
     respawnId: number | null

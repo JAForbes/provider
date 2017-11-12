@@ -388,7 +388,7 @@ const Character = {
 			, name
 			, imageId: null 
 			, position
-			, speed: 4
+			, speed: { x: 4, y: 4 }
 			, action: 'idle'
 			, alive: true
 			, respawnId: null
@@ -535,7 +535,7 @@ const Deer = {
 		state.frames[id] = Frame.of()
 		state.frames[id].scale = 4
 	
-		state.coords[id] = { x: 60, y: -100, z: 0 }
+		state.coords[id] = { x: 60, y: 0, z: -100 }
 		state.verbs[id] =
 			[ Verb('idle', ['left', 'right'])
 			, Verb('run', ['right', 'left'])
@@ -571,14 +571,14 @@ const Deer = {
 			me.c.position == 'right' 
 			&& me.p.x < them.p.x  
 			&& them.p.x < me.p.x + 100
-			&& me.p.y - 50 < them.p.y
-			&& them.p.y < me.p.y + 50
+			&& me.p.z - 50 < them.p.z
+			&& them.p.z < me.p.z + 50
 
 			|| me.c.position == 'left'
 			&& me.p.x > them.p.x
 			&& them.p.x > me.p.x - 100
-			&& me.p.y - 50 < them.p.y
-			&& them.p.y < me.p.y + 50
+			&& me.p.z - 50 < them.p.z
+			&& them.p.z < me.p.z + 50
 		) 
 	},
 
@@ -610,7 +610,7 @@ const Deer = {
 		) {
 			me.p.x = me.p.x + ( 
 				me.c.position == 'left' ? -1 : 1 
-			) * me.c.speed
+			) * me.c.speed.x
 		} else if ( me.c.action == 'run' ){
 			me.c.position = 
 				me.c.position == 'right' ? 'left' : 'right'
@@ -640,7 +640,7 @@ const Deer = {
 		state.characters[deer.id]
 
 		me.p.x = me.p.x + Util.random(deer.spawnRadius)
-		me.p.y = Util.randomInt(200)
+		me.p.z = Util.randomInt(200)
 		me.c.alive = true
 		me.c.action = 'idle'
 		me.c.position = 
@@ -734,7 +734,7 @@ const Hunter = {
 		state.frames[id] = Frame.of()
 		state.frames[id].scale = 4
 	
-		state.coords[id] = { x: 100, y: 40, z: 0 }
+		state.coords[id] = { x: 100, y: 0, z: 40 }
 	
 		state.characters[id] =
 			Character.of({
@@ -806,7 +806,7 @@ const Hunter = {
 	 * @param {Provider.Hunter} hunter 
 	 */
 	hunger(state, hunter){
-		const { status, id, day, family } = hunter
+		const { id, day, family } = hunter
 		const statuses = Hunter.statuses
 
 
@@ -819,7 +819,7 @@ const Hunter = {
 					})
 				)
 		
-		if( status == 'starving' ){
+		if( hunter.status == 'starving' ){
 			if( me.c.alive ){
 				me.c.alive = false
 				hunter.status = 'dead'
@@ -832,7 +832,7 @@ const Hunter = {
 
 
 		hunter.status = 
-			statuses[statuses.indexOf(status) - 1] || 'dead'
+			statuses[statuses.indexOf(hunter.status) - 1] || 'dead'
 
 		if( family.status == 'starving '){
 			if( family.adults > 0 ){
@@ -845,7 +845,7 @@ const Hunter = {
 		}
 
 		family.status =
-			statuses[statuses.indexOf(status) - 1] || family.status
+			statuses[statuses.indexOf(family.status) - 1] || family.status
 	},
 
 	/**
@@ -923,23 +923,23 @@ const Hunter = {
 			, 'starving': [1.5,1/5 * 0.5]
 			}[ status ] || [me.c.speed, state.frames[me.c.id].playspeed]
 
-		me.c.speed = newSpeed
+		me.c.speed = {x: newSpeed, y:newSpeed}
 		state.frames[me.c.id].playspeed = newPlayspeed
 		
 		if( carrying ){
 			me.c.action = 'carry'
 			if (state.keys.DOWN[Keys.ARROW_UP] ){
 				me.c.position = "back"
-				me.p.y = me.p.y-1*me.c.speed
+				me.p.z = me.p.z-1*me.c.speed.y
 			} else if (state.keys.DOWN[Keys.ARROW_DOWN]) {
 				me.c.position = "front"
-				me.p.y= me.p.y + 1*me.c.speed
+				me.p.z= me.p.z + 1*me.c.speed.y
 			} else if ( state.keys.DOWN[Keys.ARROW_LEFT] ){
 				me.c.position = "left"
-				me.p.x= me.p.x-1*me.c.speed
+				me.p.x= me.p.x-1*me.c.speed.x
 			} else if ( state.keys.DOWN[Keys.ARROW_RIGHT] ){
 				me.c.position = "right"
-				me.p.x= me.p.x + 1*me.c.speed
+				me.p.x= me.p.x + 1*me.c.speed.x
 			} else if (state.keys.DOWN[Keys.F]){
 
 				me.c.action = "walk"
@@ -956,19 +956,19 @@ const Hunter = {
 		} else if ( state.keys.DOWN[Keys.ARROW_UP] ){
 			me.c.action = 'walk'
 			me.c.position = 'back'
-			me.p.y = me.p.y - 1 * me.c.speed
+			me.p.z = me.p.z - 1 * me.c.speed.y
 		} else if ( state.keys.DOWN[Keys.ARROW_DOWN] ){
 			me.c.action = 'walk'
 			me.c.position = 'front'
-			me.p.y = me.p.y  +  1 * me.c.speed
+			me.p.z = me.p.z  +  1 * me.c.speed.y
 		} else if ( state.keys.DOWN[Keys.ARROW_LEFT] ){
 			me.c.action = 'walk'
 			me.c.position = 'left'
-			me.p.x = me.p.x - 1 * me.c.speed
+			me.p.x = me.p.x - 1 * me.c.speed.x
 		} else if ( state.keys.DOWN[Keys.ARROW_RIGHT] ){
 			me.c.action = 'walk'
 			me.c.position = 'right'
-			me.p.x = me.p.x  +  1 * me.c.speed
+			me.p.x = me.p.x  +  1 * me.c.speed.x
 		} else {
 			me.c.action = 'idle'
 		}
@@ -1251,6 +1251,7 @@ const UI = {
 							,height: '100%'
 							,transitionDuration: '1s'
 							,transform:
+								
 								'scale3d('+[
 									state.camera.scale.x
 									, state.camera.scale.y
@@ -1263,7 +1264,6 @@ const UI = {
 						const frame = state.frames[id]
 						const coords = state.coords[id]
 
-						coords.z = coords.y
 						return m('canvas', {
 							id,
 							key: id,
@@ -1281,7 +1281,7 @@ const UI = {
 									
 									,'translate3d('+[
 										(coords.x-state.camera.x)+'px',
-										(coords.y-state.camera.y)+'px',
+										(coords.z + coords.y-state.camera.y)+'px',
 										(coords.z-state.camera.z)+'px'
 									]+')'
 									
@@ -1406,7 +1406,7 @@ const Villager = {
 		if( c.family.children + c.family.adults > 0 ){
 	
 			Character.initSimpleCharacter(
-				state, 'v2', 'villager', { x: -25, y: -25, z: 0 } 
+				state, 'v2', 'villager', { x: -30, y: 0, z: -40 } 
 			)
 	
 		} else {
@@ -1416,7 +1416,7 @@ const Villager = {
 		if (c.family.children+c.family.adults > 4){
 	
 			Character.initSimpleCharacter(
-				state, 'v', 'villager', { x: -25, y: -25, z: 0 } 
+				state, 'v', 'villager', { x: 30, y: 0, z: -80 } 
 			)
 	
 		} else {
@@ -1426,7 +1426,7 @@ const Villager = {
 		if (c.family.children+c.family.adults > 8){
 	
 			Character.initSimpleCharacter(
-				state, 'v3', 'villager', { x: 25, y: -25, z: 0 }
+				state, 'v3', 'villager', { x: 0, y: 0, z: -80 }
 			)
 	
 		} else {
@@ -1468,9 +1468,13 @@ const Game = {
 		)
 		
 		
-		state.camera.x = state.coords[hunter].x
-		state.camera.y = state.coords[hunter].y - 10000
+		state.camera.x = state.coords[hunter].x 
+			+ Util.even() * Util.random() * 10000
+		state.camera.y = state.coords[hunter].y 
+			+ Util.even() * Util.random() * 10000
 		state.camera.z = state.coords[hunter].z
+			+ Util.even() * Util.random() * 10000
+
 		Game.initAudioResources(state)
 		state.spatialSounds.fire = {
 			snd: 'fire'
@@ -1571,12 +1575,12 @@ const Game = {
 		}
 		c.status = 'peckish'
 		state.coords[hunter].x = 100 * Util.random() * Util.even()
-		state.coords[hunter].y = 40 * Util.random() * Util.even()
+		state.coords[hunter].z = 40 * Util.random() * Util.even()
 		state.coords[deer].x = -60
-		state.coords[deer].y = -100
+		state.coords[deer].z = -100
 
 		state.camera.x = state.coords[hunter].x
-		state.camera.y = state.coords[hunter].y - 10000
+		state.camera.z = state.coords[hunter].z - 10000
 
 		d.spawnRadius = 5
 		state.characters[c.id].alive = true
