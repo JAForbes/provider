@@ -1282,8 +1282,9 @@ const UI = {
 									,'translate3d('+[
 										(coords.x-state.camera.x)+'px',
 										(coords.z 
-											+ coords.y-state.camera.y
-										)+'px',
+											+ coords.y 
+											- ( state.camera.z 
+												+ state.camera.y))+'px',
 										(coords.z-state.camera.z)+'px'
 									]+')'
 									
@@ -1408,7 +1409,7 @@ const Villager = {
 		if( c.family.children + c.family.adults > 0 ){
 	
 			Character.initSimpleCharacter(
-				state, 'v2', 'villager', { x: -30, y: 0, z: -40 } 
+				state, 'v2', 'villager', { x: -30, y: 0, z: -30 } 
 			)
 	
 		} else {
@@ -1418,7 +1419,7 @@ const Villager = {
 		if (c.family.children+c.family.adults > 4){
 	
 			Character.initSimpleCharacter(
-				state, 'v', 'villager', { x: 30, y: 0, z: -80 } 
+				state, 'v', 'villager', { x: 0, y: 0, z: -40 } 
 			)
 	
 		} else {
@@ -1428,7 +1429,7 @@ const Villager = {
 		if (c.family.children+c.family.adults > 8){
 	
 			Character.initSimpleCharacter(
-				state, 'v3', 'villager', { x: 0, y: 0, z: -80 }
+				state, 'v3', 'villager', { x: 30, y: 0, z: -30 }
 			)
 	
 		} else {
