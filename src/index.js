@@ -145,8 +145,7 @@ const Frame = {
 	
 			if(image != null){
 	
-				if( image.complete ){
-	
+				if( image.complete ){	
 					Frame.onload(image, frame)
 				} else {
 					image.onload = () => 
@@ -1319,15 +1318,15 @@ const UI = {
 								position: 'absolute'
 								, width: '400px'
 								, height: '400px'
-								, imageRendering: 'pixelated'
+								, imageRendering: 'crisp-edges'
 								, backgroundImage: 'url(https://cdna.artstation.com/p/assets/images/images/006/295/124/large/sergiu-matei-grass-tile-pixel-art-rpg-top-view-indie-game-dev-matei-sergiu.jpg)'
 								, backgroundRepeat: 'repeat'
-								, backgroundSize: 'calc( 100% * 1/64 )'
+								, backgroundSize: '25px 25px'
 								, opacity: 1
-								, filter: 'brightness(0.5)'
-								, borderRadius: '100%'
+								// , filter: 'brightness(0.5)'
+								// , borderRadius: '100%'
 								, transform: 
-									'translateY(-150px) rotateX(90deg) rotateZ(45deg) scale(-1, -1) scale(16, 16)'	
+									'translateY(30px) translate(-50%, -50%) rotateX(90deg) rotateZ(45deg) scale(-1, -1) scale(8, 8)'	
 							}
 						})
 						,m('div#mountain', {
