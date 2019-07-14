@@ -754,7 +754,17 @@ const Hunter = {
 			})
 	},
 	
-	statuses: [ 'starving', 'hungry', 'peckish', 'healthy'],
+	/**
+	 * @type {Provider.HunterStatus[]}
+	 */
+	// @ts-ignore
+	hunterStatuses: [ 'starving', 'hungry', 'peckish', 'healthy', 'dead' ],
+	
+	/**
+	 * @type {Provider.FamilyStatus[]}
+	 */
+	// @ts-ignore
+	familyStatuses: [ 'starving', 'hungry', 'peckish', 'healthy' ],
 
 	/**
 	 * @param {HunterState} state
@@ -817,7 +827,6 @@ const Hunter = {
 	 */
 	hunger(state, hunter){
 		const { id, day, family } = hunter
-		const statuses = Hunter.statuses
 
 
 		const [me] = 
@@ -842,9 +851,10 @@ const Hunter = {
 
 
 		hunter.status = 
-			statuses[statuses.indexOf(hunter.status) - 1] || 'dead'
+			Hunter.hunterStatuses[Hunter.hunterStatuses.indexOf(hunter.status) - 1] 
+			|| 'dead'
 
-		if( family.status == 'starving '){
+		if( family.status == 'starving' ){
 			if( family.adults > 0 ){
 				family.adults --
 				family.starved ++
@@ -855,7 +865,8 @@ const Hunter = {
 		}
 
 		family.status =
-			statuses[statuses.indexOf(family.status) - 1] || family.status
+			Hunter.familyStatuses[Hunter.familyStatuses.indexOf(family.status) - 1] 
+			|| family.status
 	},
 
 	/**
@@ -866,7 +877,7 @@ const Hunter = {
 		
 		const { status, family } = hunter
 
-		const statuses = Hunter.statuses
+		const statuses = Hunter.hunterStatuses
 
 		if( state.resources.snd.drum5.element != null ){
 			SND.play(state, state.resources.snd.drum5.element)
@@ -894,8 +905,8 @@ const Hunter = {
 		}
 
 		hunter.family.status = 
-			Hunter.statuses
-				[Hunter.statuses.indexOf(hunter.family.status) + 1] 
+			Hunter.familyStatuses
+				[Hunter.hunterStatuses.indexOf(hunter.family.status) + 1] 
 				|| 'healthy'
 
 		if( hunter.family.status == 'healthy' && hunter.family.adults > 0 ){
@@ -931,7 +942,9 @@ const Hunter = {
 			, 'peckish': [3, state.frames[me.c.id].playspeed]
 			, 'hungry': [2.5, 1/4 * 0.5]
 			, 'starving': [1.5,1/5 * 0.5]
-			}[ status ] || [me.c.speed, state.frames[me.c.id].playspeed]
+			, 'dead': [0, 0]
+			}[ status ] 
+			|| [me.c.speed, state.frames[me.c.id].playspeed]
 
 		me.c.speed = {x: newSpeed, z: newSpeed}
 		state.frames[me.c.id].playspeed = newPlayspeed
@@ -1109,7 +1122,7 @@ const LoopingSounds = {
 			const sndResource = state.resources.snd[sndId]
 
 			if( sndResource.element != null ){
-				if(SND.currentTime == 0){
+				if(sndResource.element.currentTime == 0){
 					SND.play(state, sndResource.element)
 				}
 	
@@ -1558,6 +1571,7 @@ const Game = {
 
 	paused: false,
 	
+	restartID: 0,
 	/**
 	 * 
 	 * @param {Provider.State & NightState} state 

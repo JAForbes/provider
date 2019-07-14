@@ -1,7 +1,7 @@
-export type Verb = { 
-    name: string 
+export type Verb = {
+    name: string
     positions: string[]
-    images: { [k:string]: string }
+    images: { [k: string]: string }
 }
 
 export type Coord = {
@@ -32,17 +32,31 @@ export type Frame = {
     alpha: number
 }
 
+export type HunterStatus =
+    'starving'
+    | 'hungry'
+    | 'peckish'
+    | 'healthy'
+    | 'dead'
+
+
+export type FamilyStatus =
+    'starving'
+    | 'hungry'
+    | 'peckish'
+    | 'healthy'
+
 export type Hunter = {
     day: number
     carrying: boolean
     family: {
-        status: string
+        status: FamilyStatus
         children: number
-         adults: number
-         starved:  number	
+        adults: number
+        starved: number
     }
     id: string
-    status: string
+    status: HunterStatus
 }
 
 export type Deer = {
@@ -63,53 +77,53 @@ export type Camera = {
 
 export type LoopingSound = string
 
-export type Canvas = { 
+export type Canvas = {
     element: HTMLCanvasElement
-    context: CanvasRenderingContext2D 
+    context: CanvasRenderingContext2D
 }
 
 export type State = {
-    keys: { DOWN: { [index:number]: number } }
+    keys: { DOWN: { [index: number]: number } }
     mute: boolean
     resources: {
-        snd: { 
+        snd: {
             [index: string]: {
                 src: string, element: HTMLAudioElement | null
             }
         }
-        img: { 
+        img: {
             [index: string]: {
                 src: string, element: HTMLImageElement | null
             }
         }
     }
     coords: {
-        [index:string]: Coord
+        [index: string]: Coord
     }
     verbs: {
-        [index:string]: Verb[]
+        [index: string]: Verb[]
     }
     characters: {
-        [index:string]: Character
+        [index: string]: Character
     }
     frames: {
-        [index:string]: Frame
+        [index: string]: Frame
     }
     camera: Camera
     hunter: {
-        [index:string]: Hunter
+        [index: string]: Hunter
     }
     deer: {
-        [index:string]: Deer
+        [index: string]: Deer
     }
     spatialSounds: {
-        [index:string]: SpatialSound
+        [index: string]: SpatialSound
     }
     loopingSounds: {
-        [index:string]: LoopingSound
+        [index: string]: LoopingSound
     }
     canvas: {
-        [index:string]: Canvas
+        [index: string]: Canvas
     }
 }
 
