@@ -1,3 +1,11 @@
+export type Night = { timeOfDay: number, increment: number }
+
+export type NightState = {
+    night: {
+        [index: string]: Night
+    }
+}
+
 export type Verb = {
     name: string
     positions: string[]
@@ -83,6 +91,8 @@ export type Canvas = {
 }
 
 export type State = {
+    time: number,
+    frame: number,
     keys: { DOWN: { [index: number]: number } }
     mute: boolean
     resources: {
@@ -126,5 +136,8 @@ export type State = {
         [index: string]: Canvas
     }
 }
+    & NightState
+
+export type Patch = (a: Provider.State) => Provider.State
 
 export as namespace Provider;

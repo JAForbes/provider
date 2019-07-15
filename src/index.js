@@ -1,10 +1,21 @@
+/* globals window */
 // @ts-check 
-const m = /** @type {any} */ (
-	// @ts-ignore
-	// eslint-disable-next-line
-	window.m
-)
 
+import m from 'mithril'
+import stream from 'mithril/stream'
+
+/**
+ * @param { stream.Stream<T> } x
+ * @returns { stream.Stream<T> }
+ * @template T
+ */
+function dropRepeats(x){
+	const out = stream()
+	x.map(
+		x => x != out() ? out(x) : null
+	)
+	return out
+}
 
 const uuid = () => Math.random().toString(15).slice(2)
 const hunter = uuid()
@@ -202,7 +213,6 @@ const Frame = {
 						, dy
 						, dWidth
 						, dHeight
-					
 					)
 				
 				}
@@ -673,7 +683,7 @@ const Deer = {
 
 			state.deer[deer].respawnId = 
 				// eslint-disable-next-line no-undef
-				setTimeout( 
+				window.setTimeout( 
 					() => {
 						Deer.respawn(state, state.deer[deer])
 						state.deer[deer].respawnId = null
@@ -851,7 +861,9 @@ const Hunter = {
 
 
 		hunter.status = 
-			Hunter.hunterStatuses[Hunter.hunterStatuses.indexOf(hunter.status) - 1] 
+			Hunter.hunterStatuses[
+				Hunter.hunterStatuses.indexOf(hunter.status) - 1
+			]
 			|| 'dead'
 
 		if( family.status == 'starving' ){
@@ -865,7 +877,9 @@ const Hunter = {
 		}
 
 		family.status =
-			Hunter.familyStatuses[Hunter.familyStatuses.indexOf(family.status) - 1] 
+			Hunter.familyStatuses[
+				Hunter.familyStatuses.indexOf(family.status) - 1
+			] 
 			|| family.status
 	},
 
@@ -1032,22 +1046,8 @@ const Hunter = {
 	}
 }
 
-/**
- 
-	@typedef {{ timeOfDay:number, increment: number }} Night
-
-	@typedef {{
-		night: {
-			[k:string]: Night
-		}
-	} & HunterState } NightState
-
-*/
 const Night = {
 
-	/**
-	 * @returns { Night }
-	 */
 	of(){
 		return {
 			timeOfDay: 0,
@@ -1057,7 +1057,7 @@ const Night = {
 
 	/**
 	 * 
-	 * @param {NightState} state 
+	 * @param {Provider.State} state 
 	 * @param {string} id 
 	 */
 	init(state, id){
@@ -1065,7 +1065,7 @@ const Night = {
 	},
 
 	/**
-	 * @param {NightState} state 
+	 * @param {Provider.State} state 
 	 */
 	system(state){
 		
@@ -1249,7 +1249,7 @@ const Camera = {
 const UI = {
 
 	/**
-	 	@param { NightState } state 
+	 	@param { Provider.State } state 
 	 */
 	system(state){
 		const c = state.hunter[hunter]
@@ -1314,7 +1314,7 @@ const UI = {
 										,'calc( 100vh / 2 - 50%)'
 									]+')'
 									
-									,'perspective('+512+'px)'
+									,'perspective(512px)'
 									,'rotateX(-15deg)'
 									,'translate3d('+[
 										-state.camera.x+'px'
@@ -1332,14 +1332,22 @@ const UI = {
 								, width: '400px'
 								, height: '400px'
 								, imageRendering: 'crisp-edges'
+								// eslint-disable-next-line max-len
 								, backgroundImage: 'url(https://cdna.artstation.com/p/assets/images/images/006/295/124/large/sergiu-matei-grass-tile-pixel-art-rpg-top-view-indie-game-dev-matei-sergiu.jpg)'
 								, backgroundRepeat: 'repeat'
 								, backgroundSize: '25px 25px'
 								, opacity: 1
 								// , filter: 'brightness(0.5)'
 								// , borderRadius: '100%'
-								, transform: 
-									'translateY(30px) translate(-50%, -50%) rotateX(90deg) rotateZ(45deg) scale(-1, -1) scale(8, 8)'	
+								, transform: [
+									''
+									,'translate(-50%, -50%)'
+									,'rotateX(90deg)'
+									,'rotateZ(45deg)'
+									,'scale(-1, -1)'
+									,'scale(8, 8)'	
+								]
+								.join(' ')
 							}
 						})
 						,m('div#mountain', {
@@ -1348,23 +1356,17 @@ const UI = {
 								, width: '800px'
 								, height: '600px'
 								, imageRendering: 'pixelated'
+								// eslint-disable-next-line max-len
 								, backgroundImage: 'url(https://static3.scirra.net/images/newstore/products/3053/ss1.png)'
-								, transform: 
-									'translateZ(-10000px) translateY(-600px) rotateZ(180deg) scale(-1, -1) scale(32, 32)'	
+								, transform: [
+									'translateZ(-10000px)',
+									'translateY(-600px)',
+									'rotateZ(180deg)',
+									'scale(-1, -1)',
+									'scale(32, 32)'	
+								]
+								.join(' ')
 							}
-						})
-						,m('div#feedRadius', {
-							style: {
-
-								position: 'absolute'
-								, width: '150px'
-								, height: '150px'
-								, borderRadius: '100%'
-								, opacity: '0.8'
-								, border: 'solid 5px pink'
-								, transform: 
-									'translate(-50%,-50%) translateY(32px) rotateX(90deg)'	
-							}		
 						})
 					)
 					,m('div#camera-game'
@@ -1379,7 +1381,7 @@ const UI = {
 										,'calc( 100vh / 2 - 50%)'
 									]+')'
 									
-									,'perspective('+512+'px)'
+									,'perspective(512px)'
 									,'rotateX(-15deg)'
 									,'translate3d('+[
 										-state.camera.x+'px'
@@ -1391,11 +1393,30 @@ const UI = {
 							}
 							
 						}
+						,m('div#feedRadius', {
+							style: {
+								position: 'absolute'
+								, width: '300px'
+								, height: '300px'
+								, borderRadius: '100%'
+								, opacity: '0.8'
+								, border: 'solid 5px pink'
+								// , transformOrigin: 'top left'
+								, transform: [
+									''
+									,'rotateX(-90deg)'
+									,'translate3d(-150px, 0px, -150px)'
+									// ,'translate3d(-50%, -50%, 0px)'
+								]
+								.join(' ')
+							}
+						})
 						,Object.keys(state.frames).map(function(id){
 							
 							const frame = state.frames[id]
 							const coords = state.coords[id]
 
+							// @ts-ignore
 							return m('canvas', {
 								id,
 								key: id,
@@ -1404,8 +1425,9 @@ const UI = {
 									left: '0px',
 									position: 'absolute',
 									opacity: frame.alpha,
+									border: 'solid 1px violet',
 									transform: [
-										'translate(-50%, -50%)'
+										'translate(-50%, -100%)'
 										,'translate3d('+[
 											coords.x+'px',
 											coords.y +'px',
@@ -1574,7 +1596,7 @@ const Game = {
 	restartID: 0,
 	/**
 	 * 
-	 * @param {Provider.State & NightState} state 
+	 * @param {Provider.State} state 
 	 */	
 	init(state){
 
@@ -1623,7 +1645,7 @@ const Game = {
 
 
 	/**
-	 * @param {Provider.State & NightState} state 
+	 * @param {Provider.State} state 
 	 */
 	initAudioResources(state){
 
@@ -1640,7 +1662,7 @@ const Game = {
 	},
 
 	/**
-	 * @param {Provider.State & NightState} state 
+	 * @param {Provider.State} state 
 	 */
 	system(state){
 
@@ -1668,12 +1690,11 @@ const Game = {
 		
 		UI.system(state)
 
-		// eslint-disable-next-line no-undef
-		requestAnimationFrame( () => Game.system(state) )
+		return state
 	},
 
 	/**
-	 * @param {Provider.State & NightState} state 
+	 * @param {Provider.State} state 
 	 */
 	status(state){
 		const c = state.hunter[hunter]
@@ -1690,12 +1711,12 @@ const Game = {
 			}
 			
 			//eslint-disable-next-line no-undef
-			Game.restartID = setTimeout(() => Game.restart(state),8000)
+			Game.restartID = window.setTimeout(() => Game.restart(state),8000)
 		}
 	},
 
 	/**
-	 * @param {Provider.State & NightState} state 
+	 * @param {Provider.State} state 
 	 */
 	restart(state){
 		const c = state.hunter[hunter]
@@ -1727,8 +1748,19 @@ const Game = {
 	}
 }
 
-Game.init({
-	keys: {
+
+/**
+ * @type { stream.Stream<Provider.Patch> }
+ */
+const setState = stream()
+
+/**
+ * @type {Provider.State}
+ */
+const initial = {
+	time: Date.now()
+	,frame: 0
+	,keys: {
 		DOWN: {}
 	}
 	,mute: LocalStorage.get('provider.mute') == 'true'
@@ -1762,5 +1794,54 @@ Game.init({
 	,spatialSounds:{}
 	,loopingSounds: {}
 	,canvas: {}
+}
 
-})
+/**
+ * @type { stream.Stream<Provider.State> }
+ */
+const getState = stream.scan(
+	(p,f) => f(p), initial, setState
+)
+
+function RAFService(){
+
+	/**
+	 * @type { stream.Stream<Provider.Patch> }
+	 */
+	const out$ = stream()
+
+	function loop(){
+		out$( 
+			x => ({ ...x, frame: x.frame + 1 })
+		)
+
+		window.requestAnimationFrame(loop)
+	}
+
+	loop()
+
+	return out$
+}
+
+RAFService()
+	.map(setState)
+
+/**
+ * @param { stream.Stream<Provider.State> } getState
+ * @returns { stream.Stream<Provider.Patch> }
+ */
+function GameService(getState){
+	
+	const select$ = dropRepeats( getState.map( x => x.frame) )
+
+	const state$ = 
+		select$	
+		.map( () => Game.system )
+
+	return state$
+
+}
+
+
+
+// Game.init()
