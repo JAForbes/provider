@@ -768,7 +768,7 @@ const Hunter = {
 	 * @type {Provider.HunterStatus[]}
 	 */
 	// @ts-ignore
-	hunterStatuses: [ 'starving', 'hungry', 'peckish', 'healthy', 'dead' ],
+	hunterStatuses: [ 'dead', 'starving', 'hungry', 'peckish', 'healthy' ],
 	
 	/**
 	 * @type {Provider.FamilyStatus[]}
@@ -889,7 +889,6 @@ const Hunter = {
 	 */
 	eat(state, hunter){
 		
-		const { status, family } = hunter
 
 		const statuses = Hunter.hunterStatuses
 
@@ -901,10 +900,10 @@ const Hunter = {
 		console.log('eat')
 
 		hunter.status = 
-			statuses[statuses.indexOf(status) + 1] || 'healthy'
+			statuses[statuses.indexOf(hunter.status) + 1] || 'healthy'
 
-		if( family.status == 'healthy' && family.adults > 0 ){
-			family.children ++ 
+		if( hunter.family.status == 'healthy' && hunter.family.adults > 0 ){
+			hunter.family.children ++ 
 		}
 	},
 
@@ -920,7 +919,7 @@ const Hunter = {
 
 		hunter.family.status = 
 			Hunter.familyStatuses
-				[Hunter.hunterStatuses.indexOf(hunter.family.status) + 1] 
+				[Hunter.familyStatuses.indexOf(hunter.family.status) + 1] 
 				|| 'healthy'
 
 		if( hunter.family.status == 'healthy' && hunter.family.adults > 0 ){
@@ -935,15 +934,8 @@ const Hunter = {
 	 */
 	act(state, hunter, deer){
 		
-		const {
-			id
-			, status
-			, carrying
-		} = hunter
-
-		
 		const [me] = 
-			[ id ]
+			[ hunter.id ]
 				.map(
 					id => ({
 						c: state.characters[id]
@@ -957,13 +949,13 @@ const Hunter = {
 			, 'hungry': [2.5, 1/4 * 0.5]
 			, 'starving': [1.5,1/5 * 0.5]
 			, 'dead': [0, 0]
-			}[ status ] 
+			}[ hunter.status ] 
 			|| [me.c.speed, state.frames[me.c.id].playspeed]
 
 		me.c.speed = {x: newSpeed, z: newSpeed}
 		state.frames[me.c.id].playspeed = newPlayspeed
 		
-		if( carrying ){
+		if( hunter.carrying ){
 			me.c.action = 'carry'
 			if (state.keys.DOWN[Keys.ARROW_UP] ){
 				me.c.position = "back"
@@ -1098,6 +1090,8 @@ const Night = {
 				}
 			})
 		})
+
+		return state
 	}
 }
 
@@ -1598,16 +1592,6 @@ const Game = {
 	 */	
 	init(state){
 
-		// @ts-ignore
-		// eslint-disable-next-line no-undef
-		window.state = state
-
-		// eslint-disable-next-line no-undef
-		requestAnimationFrame( () => Game.system(state) )
-
-		// eslint-disable-next-line no-undef
-		setInterval( () => Night.system(state), 62.5 )
-
 		Keys.init(state)
 		Night.init(state, night)
 
@@ -1821,9 +1805,6 @@ function RAFService(){
 	return out$
 }
 
-RAFService()
-	.map(setState)
-
 /**
  * @param { stream.Stream<Provider.State> } getState
  * @returns { stream.Stream<Provider.Patch> }
@@ -1840,6 +1821,21 @@ function GameService(getState){
 
 }
 
+function NightService(){
+	const $interval = stream()
 
+	window.setInterval($interval, 62.5, Night.system )
 
-// Game.init()
+	return $interval
+}
+
+Game.init(getState())
+
+RAFService()
+	.map(setState)
+
+NightService()
+	.map(setState)
+
+GameService(getState)
+	.map(setState)
