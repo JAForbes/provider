@@ -1416,7 +1416,6 @@ const UI = {
 							const frame = state.frames[id]
 							const coords = state.coords[id]
 
-							// @ts-ignore
 							return m('canvas', {
 								id,
 								key: id,
@@ -1438,12 +1437,11 @@ const UI = {
 								},
 								width: frame.width * frame.scale,
 								height: frame.width * frame.scale,
-								/**
-								 * @param {{ dom: HTMLCanvasElement }} vnode 
-								 */
+								
 								onupdate(vnode){
-									
-									const el = vnode.dom
+									const el = 
+										/** @type {HTMLCanvasElement} */ 
+										(vnode.dom)
 
 									const con =
 										el.getContext('2d')
