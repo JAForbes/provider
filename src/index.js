@@ -443,28 +443,35 @@ const Character = {
 
 
 	/**
-	 * @param {CharacterState} state
 	 * @param {string} id 
 	 * @param {string} name 
 	 * @param {Provider.Coord} coords 
+	 * @returns {Provider.Patch}
 	 */
-	initSimpleCharacter(state, id, name, coords){
-		state.verbs[id] = 
-			[ Verb('idle', ['left']) ]
-	
+	initSimpleCharacter(id, name, coords){
+
+		return $ => {
+
+			$= R.assocPath(['verbs', id], [ Verb('idle', ['left']) ], $)
 		
-		state.frames[id] = Frame.of()
-		state.frames[id].scale = 4
-	
-		state.coords[id] = coords
+			
+			$= R.assocPath(['frames', id], Frame.of(), $)
+			$= R.assocPath(['frames', id, 'scale'], 4, $)
 		
-	
-		state.characters[id] =
-			Character.of({
-				id,
-				name,
-				position: 'left'
-			})
+			$= R.assocPath(['coords', id], coords, $)
+			
+		
+			$= R.assocPath(['characters', id], 
+				Character.of({
+					id,
+					name,
+					position: 'left'
+				})
+				,$
+			)
+
+			return $
+		}
 	},
 
 	/**
@@ -1593,9 +1600,12 @@ const Villager = {
 			const shouldExist = c.family.children + c.family.adults > 0 
 
 			if( shouldExist && !exists ){
-				Character.initSimpleCharacter(
-					state, 'v2', 'villager', { x: -30, y: 0, z: -20 } 
+				setState(
+					state => Character.initSimpleCharacter(
+						'v2', 'villager', { x: -30, y: 0, z: -20 } 
+					) (state)
 				)
+				state = getState()
 			} else if(!shouldExist && exists) {
 				Object.keys(state).forEach(function(component){
 					// @ts-ignore
@@ -1610,9 +1620,12 @@ const Villager = {
 			const shouldExist = c.family.children+c.family.adults > 4
 
 			if( shouldExist && !exists ){
-				Character.initSimpleCharacter(
-					state, 'v', 'villager', { x: 0, y: 0, z: -40 } 
+				setState(
+					state => Character.initSimpleCharacter(
+						'v', 'villager', { x: 0, y: 0, z: -40 } 
+					) (state)
 				)
+				state = getState()
 			} else if(!shouldExist && exists) {
 				Object.keys(state).forEach(function(component){
 					// @ts-ignore
@@ -1627,9 +1640,12 @@ const Villager = {
 			const shouldExist = c.family.children+c.family.adults > 8
 
 			if( shouldExist && !exists ){
-				Character.initSimpleCharacter(
-					state, 'v3', 'villager', { x: 30, y: 0, z: -20 } 
+				setState(
+					state => Character.initSimpleCharacter(
+						'v3', 'villager', { x: 30, y: 0, z: -20 } 
+					) (state)
 				)
+				state = getState()
 			} else if(!shouldExist && exists) {
 				Object.keys(state).forEach(function(component){
 					// @ts-ignore
@@ -1655,50 +1671,88 @@ const Game = {
 
 		setState( state => Night.init(night) (state) )
 		setState( state => Deer.init(deer) (state) )
-	
-		
 		setState( state => Hunter.init(hunter) (state) )
-		state = getState()
-		Character.initSimpleCharacter(
-			state, 
-			'f', 
-			'fire', 
-			{ x:0, y:20, z:0 }
-		)
-		
-		
-		state.camera.x = 0//state.coords[hunter].x 
-			// + Util.even() * Util.random() * 10000
-		state.camera.y = -1000
-			// + 50 + Util.random() * 10000
-		state.camera.z = 3000//state.coords[hunter].z
-			// + Util.even() * Util.random() * 10000
 
-		Game.initAudioResources(state)
-		state.spatialSounds.fire = {
-			snd: 'fire'
-			,coords: state.coords.f
-		}
-			
-		state.loopingSounds.fire = 'fire'
+		setState( state => 
+			Character.initSimpleCharacter(
+				'f', 
+				'fire', 
+				{ x:0, y:20, z:0 }
+			) (state)
+		)		
+
+		setState(
+			$ => {
+				$= R.assocPath(
+					['camera', 'x']
+					,0
+					,$
+				)
+				$= R.assocPath(
+					['camera', 'y']
+					,-1000
+					,$
+				)
+				$= R.assocPath(
+					['camera', 'z']
+					,3000
+					,$
+				)
+				return $
+			}
+		)
+
+		setState( state => Game.initAudioResources(state) )
+		
+		setState(
+			$ => R.assocPath(
+				['spatialSounds', 'fire']
+				,{
+					snd: 'fire'
+					,coords: $.coords.f
+				}
+				,$
+			)
+		)
+
+		setState(
+			$ => R.assocPath(
+				['loopingSounds', 'fire']
+				, 'fire'
+				,$
+			)
+		)
 	},
 
 
 	/**
-	 * @param {Provider.State} state 
+	 * @param {Provider.State} $ 
+	 * @returns {Provider.State} 
 	 */
-	initAudioResources(state){
+	initAudioResources($){
 
-		setState( state => SND.setMute(state, state.mute) )
+		$= SND.setMute($, $.mute)
 		
-		Object.keys(state.resources.snd)
-			.forEach(function(id){
-				const o = state.resources.snd[id]
+		$= Object.keys($.resources.snd)
+			.reduce(function($, id){
+				// const o = $.resources.snd[id]
 
 				// eslint-disable-next-line no-undef
-				o.element = new Audio()
-				o.element.src = o.src
-			})
+				const audio = new Audio()
+				audio.src = 
+					String(R.path(['resources', 'snd', id, 'src'], $))
+					 
+				$= R.assocPath(
+					['resources', 'snd', id, 'element']
+					,audio
+					,$
+				)
+
+				return $
+
+			}, $)
+
+		return $
 	},
 
 	/**
