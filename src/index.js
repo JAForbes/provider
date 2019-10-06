@@ -2,6 +2,7 @@
 // @ts-check 
 
 import m from 'mithril'
+import * as R from 'ramda'
 import stream from 'mithril/stream'
 
 /**
@@ -378,7 +379,10 @@ const Keys = {
 			if( e.keyCode == 77 /* M */){
 				setState( state => SND.setMute(state, !state.mute) )
 			}
-			delete state.keys.DOWN[e.keyCode]
+
+			setState(
+				state => R.dissocPath(['keys', 'DOWN', e.keyCode], state)
+			)
 		}
 
 		/**
@@ -387,7 +391,13 @@ const Keys = {
 		// eslint-disable-next-line no-undef
 		window.onkeydown = e => {
 			if( !(e.keyCode in state.keys.DOWN) ){
-				state.keys.DOWN[e.keyCode] = Date.now()
+				
+				setState(
+					state => 
+						R.assocPath(
+							['keys', 'DOWN', e.keyCode], Date.now(), state
+						)
+				)
 			}
 
 			if( e.keyCode > 31 && e.keyCode < 41 ){
