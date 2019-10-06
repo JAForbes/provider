@@ -577,27 +577,35 @@ const Deer = {
 	},
 
 	/**
-	 * @param {DeerState} state 
 	 * @param {string} id 
+	 * @returns {Provider.Patch}
 	 */
-	init(state, id){
-		state.deer[id] = Deer.of(id)
-		state.frames[id] = Frame.of()
-		state.frames[id].scale = 4
+	init(id){
+
+		return $ => {
+			$= R.assocPath(['deer', id], Deer.of(id), $)
+			$= R.assocPath(['frames', id], Frame.of(), $) 
+			$= R.assocPath(['frames', id, 'scale'], 4, $)
+			$= R.assocPath(['coords',id],{ x: 60, y: 0, z: -100 },$)
+			$= R.assocPath(['verbs', id]) (
+				[ Verb('idle', ['left', 'right'])
+				, Verb('run', ['right', 'left'])
+				, Verb('die', ['right', 'left'])
+				]
+				,$
+			)
+				
+			$= R.assocPath(['characters', id]) (
+				Character.of({
+					id: id
+					,name: 'deer'
+					,position: 'left'
+				})
+				,$
+			)
 	
-		state.coords[id] = { x: 60, y: 0, z: -100 }
-		state.verbs[id] =
-			[ Verb('idle', ['left', 'right'])
-			, Verb('run', ['right', 'left'])
-			, Verb('die', ['right', 'left'])
-			]
-			
-		state.characters[id] =
-			Character.of({
-				id: id
-				,name: 'deer'
-				,position: 'left'
-			})
+			return $
+		}
 	},
 	
 
@@ -765,34 +773,46 @@ const Hunter = {
 	},
 
 	/**
-	 * 
-	 * @param {HunterState} state 
 	 * @param {string} id 
+	 * @returns {Provider.Patch}
 	 */
-	init(state, id){
-		state.verbs[id] = 
-			[ Verb('idle', ['front', 'left', 'right', 'back'])
-			, Verb('walk',['front'])
-			, Verb('walk',['left'])
-			, Verb('walk',['right'])
-			, Verb('walk',['back'])
-			, Verb('attack',['front','left','right','back'])
-			, Verb('carry',['front','left','right','back'])
-			]
-	
-		state.hunter[id] = Hunter.of(id)
-	
-		state.frames[id] = Frame.of()
-		state.frames[id].scale = 4
-	
-		state.coords[id] = { x: 100, y: 0, z: 40 }
-	
-		state.characters[id] =
-			Character.of({
-				id: id
-				,name: 'hunter'
-				,position: 'left'
-			})
+	init(id){
+
+		return $ => {
+
+			$= R.assocPath(['verbs', id]) (
+				[ Verb('idle', ['front', 'left', 'right', 'back'])
+				, Verb('walk',['front'])
+				, Verb('walk',['left'])
+				, Verb('walk',['right'])
+				, Verb('walk',['back'])
+				, Verb('attack',['front','left','right','back'])
+				, Verb('carry',['front','left','right','back'])
+				]
+				,$
+			)
+
+			$= R.assocPath(['hunter', id], Hunter.of(id), $)
+		
+			$= R.assocPath(['frames', id], Frame.of(),$)
+			$= R.assocPath(['frames', id, 'scale'], 4, $)
+			$= R.assocPath(['coords', id], 
+				{ x: 100, y: 0, z: 40 }
+				,$
+			)
+		
+		
+			$= R.assocPath(['characters', id]) (
+				Character.of({
+					id: id
+					,name: 'hunter'
+					,position: 'left'
+				})
+				,$
+			)
+
+			return $
+		}
 	},
 	
 	/**
@@ -1634,10 +1654,11 @@ const Game = {
 		Keys.init(state)
 
 		setState( state => Night.init(night) (state) )
-
-		Deer.init(state, deer)
-		Hunter.init(state, hunter)
-
+		setState( state => Deer.init(deer) (state) )
+	
+		
+		setState( state => Hunter.init(hunter) (state) )
+		state = getState()
 		Character.initSimpleCharacter(
 			state, 
 			'f', 
