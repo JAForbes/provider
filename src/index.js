@@ -5,14 +5,29 @@ import m from 'mithril'
 import stream from 'mithril/stream'
 
 /**
- * @param { stream.Stream<T> } x
- * @returns { stream.Stream<T> }
+ * @param { stream<T> } x
+ * @returns { stream<T> }
  * @template T
  */
 function dropRepeats(x){
 	const out = stream()
 	x.map(
 		x => x != out() ? out(x) : null
+	)
+	return out
+}
+
+
+/**
+ * @param { (a: T) => boolean } f
+ * @param { stream<T> } x
+ * @returns { stream<T> }
+ * @template T
+ */
+function filter(f, x){
+	const out = stream()
+	x.map(
+		x => f(x) ? out(x) : null
 	)
 	return out
 }
@@ -262,6 +277,7 @@ const Frame = {
 				Frame.next(con, state, frame)
 			}
 		})
+		return state
 	}
 	
 }
@@ -511,7 +527,7 @@ const Character = {
 			Character.initSprites( state, character )
 			Character.update( state, character )
 		})
-		
+		return state
 	}
 }
 
@@ -691,8 +707,9 @@ const Deer = {
 					, 2000 
 				)
 		}
-	}
 
+		return state
+	}
 }
 
 
@@ -1034,7 +1051,9 @@ const Hunter = {
 
 			.forEach(function({ me, you }){
 				Hunter.act(state, state.hunter[me], state.deer[you])
-			})			
+			})
+
+		return state
 	}
 }
 
@@ -1126,6 +1145,7 @@ const LoopingSounds = {
 			}
 			
 		})
+		return state
 	}
 }
 
@@ -1169,6 +1189,7 @@ const SpatialSounds = {
 				}
 			}
 		})
+		return state
 	}
 }
 
@@ -1184,6 +1205,7 @@ const DPI = {
 		} else {
 			state.camera.scale = { x:1, y: 1 }
 		}
+		return state
 	}
 }
 
@@ -1209,6 +1231,7 @@ const Canvas = {
 				canvas.context.imageSmoothingEnabled = false
 			}
 		})
+		return state
 	}
 }
 
@@ -1237,6 +1260,7 @@ const Camera = {
 					state.camera.z + (target.z - state.camera.z) * 0.05
 			}
 		}
+		return state
 	}
 }
 
@@ -1517,6 +1541,7 @@ const UI = {
 				)
 			)
 		)
+		return state
 	}
 }
 
@@ -1578,13 +1603,12 @@ const Villager = {
 				})
 			}
 		}
+		return state
 	}
 }
 
 const Game = {
-
 	paused: false,
-	
 	restartID: 0,
 	/**
 	 * 
@@ -1621,8 +1645,6 @@ const Game = {
 		}
 			
 		state.loopingSounds.fire = 'fire'
-
-		UI.system(state)
 	},
 
 
@@ -1648,29 +1670,12 @@ const Game = {
 	 */
 	system(state){
 
-		// eslint-disable-next-line no-undef
 		if ( state.resources.snd.fire.element != null ){
 			SND.play( state, state.resources.snd.fire.element )
 		}
 
 		const c = state.hunter[hunter]
-		state.camera.target = c.id
-
-		if( !Game.paused ){
-			Camera.system(state)
-			Canvas.system(state)
-			DPI.system(state)
-			Villager.system(state)
-			Deer.system(state)
-			Hunter.system(state)
-			Character.system(state)
-			Frame.system(state)
-			LoopingSounds.system(state)
-			SpatialSounds.system(state)
-			Game.status(state)
-		}
-		
-		UI.system(state)
+		state.camera.target = c.id		
 
 		return state
 	},
@@ -1695,6 +1700,7 @@ const Game = {
 			//eslint-disable-next-line no-undef
 			Game.restartID = window.setTimeout(() => Game.restart(state),8000)
 		}
+		return state
 	},
 
 	/**
@@ -1726,13 +1732,14 @@ const Game = {
 		state.characters[c.id].alive = true
 		// eslint-disable-next-line no-undef
 		Game.paused = false
+		state.frame++
 		// eslint-disable-next-line no-undef
 	}
 }
 
 
 /**
- * @type { stream.Stream<Provider.Patch> }
+ * @type { stream<Provider.Patch> }
  */
 const setState = stream()
 
@@ -1741,6 +1748,7 @@ const setState = stream()
  */
 const initial = {
 	time: Date.now()
+	,paused: false
 	,frame: 0
 	,keys: {
 		DOWN: {}
@@ -1779,7 +1787,7 @@ const initial = {
 }
 
 /**
- * @type { stream.Stream<Provider.State> }
+ * @type { stream<Provider.State> }
  */
 const getState = stream.scan(
 	(p,f) => f(p), initial, setState
@@ -1788,7 +1796,7 @@ const getState = stream.scan(
 function RAFService(){
 
 	/**
-	 * @type { stream.Stream<Provider.Patch> }
+	 * @type { stream<Provider.Patch> }
 	 */
 	const out$ = stream()
 
@@ -1806,8 +1814,8 @@ function RAFService(){
 }
 
 /**
- * @param { stream.Stream<Provider.State> } getState
- * @returns { stream.Stream<Provider.Patch> }
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
  */
 function GameService(getState){
 	
@@ -1829,6 +1837,162 @@ function NightService(){
 	return $interval
 }
 
+function UIService(){
+	const select$ = dropRepeats( getState.map( x => x.frame) )
+
+	const state$ = 
+		select$	
+		.map( () => UI.system )
+
+	return state$
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.State> }
+ */
+const activeFrameChange = getState =>
+	filter( 
+		() => !Game.paused
+		, dropRepeats( getState.map( x => x.frame) )
+	)
+	.map(
+		() => getState()
+	)
+
+	
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function CameraService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( Camera.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function CanvasService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( Canvas.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function DPIService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( DPI.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function VillagerService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( Villager.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function DeerService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( Deer.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function HunterService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( Hunter.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function CharacterService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( Character.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function FrameService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( Frame.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function LoopingSoundsService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( LoopingSounds.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function SpatialSoundsService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( SpatialSounds.system )
+		)
+}
+
+/**
+ * @param { stream<Provider.State> } getState
+ * @returns { stream<Provider.Patch> }
+ */
+function StatusService(getState){
+	return activeFrameChange(getState)
+		.map( () =>
+			/** @type { Provider.Patch } */
+			( Game.status )
+		)
+}
+
 Game.init(getState())
 
 RAFService()
@@ -1837,5 +2001,41 @@ RAFService()
 NightService()
 	.map(setState)
 
+UIService()
+	.map(setState)
+
 GameService(getState)
+	.map(setState)
+
+CameraService(getState)
+	.map(setState)
+
+CanvasService(getState)
+	.map(setState)
+
+DPIService(getState)
+	.map(setState)
+
+VillagerService(getState)
+	.map(setState)
+
+DeerService(getState)
+	.map(setState)
+
+HunterService(getState)
+	.map(setState)
+
+CharacterService(getState)
+	.map(setState)
+
+FrameService(getState)
+	.map(setState)
+
+LoopingSoundsService(getState)
+	.map(setState)
+
+SpatialSoundsService(getState)
+	.map(setState)
+
+StatusService(getState)
 	.map(setState)

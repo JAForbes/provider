@@ -92,6 +92,7 @@ export type Canvas = {
 
 export type State = {
     time: number,
+    paused: boolean,
     frame: number,
     keys: { DOWN: { [index: number]: number } }
     mute: boolean
