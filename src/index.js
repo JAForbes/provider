@@ -367,10 +367,9 @@ const Keys = {
 	F: 70,
 
 	/**
-	 *
-	 * @param {KeyState} state 
+	 * @param { stream<Provider.Patch> } setState
 	 */
-	init(state){
+	init(setState){
 		/**
 		 * @param {KeyboardEvent} e
 		 */
@@ -390,7 +389,7 @@ const Keys = {
 		 */
 		// eslint-disable-next-line no-undef
 		window.onkeydown = e => {
-			if( !(e.keyCode in state.keys.DOWN) ){
+			if( !(e.keyCode in getState().keys.DOWN) ){
 				
 				setState(
 					state => 
@@ -1663,65 +1662,57 @@ const Game = {
 	restartID: 0,
 	/**
 	 * 
-	 * @param {Provider.State} state 
+	 * @param {Provider.State} $ 
 	 */	
-	init(state){
+	init($){
 
-		Keys.init(state)
+		// todo-james separate to Game.init
+		Keys.init(setState)
 
-		setState( state => Night.init(night) (state) )
-		setState( state => Deer.init(deer) (state) )
-		setState( state => Hunter.init(hunter) (state) )
+		$= Night.init(night) ($)
+		$= Deer.init(deer) ($)
+		$= Hunter.init(hunter) ($)
 
-		setState( state => 
-			Character.initSimpleCharacter(
-				'f', 
-				'fire', 
-				{ x:0, y:20, z:0 }
-			) (state)
-		)		
-
-		setState(
-			$ => {
-				$= R.assocPath(
-					['camera', 'x']
-					,0
-					,$
-				)
-				$= R.assocPath(
-					['camera', 'y']
-					,-1000
-					,$
-				)
-				$= R.assocPath(
-					['camera', 'z']
-					,3000
-					,$
-				)
-				return $
-			}
+		$= Character.initSimpleCharacter(
+			'f', 
+			'fire', 
+			{ x:0, y:20, z:0 }
+		) ($)
+			
+		R.assocPath(
+			['camera', 'x']
+			,0
+			,$
+		)
+		$= R.assocPath(
+			['camera', 'y']
+			,-1000
+			,$
+		)
+		$= R.assocPath(
+			['camera', 'z']
+			,3000
+			,$
 		)
 
-		setState( state => Game.initAudioResources(state) )
+		$= Game.initAudioResources($)
 		
-		setState(
-			$ => R.assocPath(
-				['spatialSounds', 'fire']
-				,{
-					snd: 'fire'
-					,coords: $.coords.f
-				}
-				,$
-			)
+		$= R.assocPath(
+			['spatialSounds', 'fire']
+			,{
+				snd: 'fire'
+				,coords: $.coords.f
+			}
+			,$
 		)
 
-		setState(
-			$ => R.assocPath(
-				['loopingSounds', 'fire']
-				, 'fire'
-				,$
-			)
+		$= R.assocPath(
+			['loopingSounds', 'fire']
+			, 'fire'
+			,$
 		)
+
+		return $
 	},
 
 
@@ -2083,7 +2074,7 @@ function StatusService(getState){
 		)
 }
 
-Game.init(getState())
+setState( $ => Game.init($) )
 
 RAFService()
 	.map(setState)
