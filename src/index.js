@@ -1084,9 +1084,10 @@ const Night = {
 	 * 
 	 * @param {Provider.State} state 
 	 * @param {string} id 
+	 * @returns {Provider.Patch}
 	 */
-	init(state, id){
-		state.night[id] = Night.of()
+	init(id){
+		return state => R.assocPath(['night', id], Night.of(), state)
 	},
 
 	/**
@@ -1631,8 +1632,8 @@ const Game = {
 	init(state){
 
 		Keys.init(state)
-		Night.init(state, night)
 
+		setState( state => Night.init(night) (state) )
 
 		Deer.init(state, deer)
 		Hunter.init(state, hunter)
