@@ -1679,7 +1679,7 @@ const Game = {
 			{ x:0, y:20, z:0 }
 		) ($)
 			
-		R.assocPath(
+		$= R.assocPath(
 			['camera', 'x']
 			,0
 			,$
