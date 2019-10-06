@@ -319,22 +319,24 @@ const SND = {
 	},
 
 	/**
-	 * @param {SNDState} state
+	 * @param {Provider.State} state
 	 * @param {boolean} x 
+	 * @returns {Provider.State}
 	 */
 	setMute(state, x){
-	
-		state.mute = x
-		LocalStorage.set('provider.mute', String(state.mute))
+		
+		const newState = { ...state, mute: x }
+
+		LocalStorage.set('provider.mute', String(x))
 		// eslint-disable-next-line no-undef
-		Object.keys(state.resources.snd)
+		Object.keys(newState.resources.snd)
 			.map(function(k){
-				return state.resources.snd[k]
+				return newState.resources.snd[k]
 			})
 			.filter( o => o.element != null )
 			
 			.forEach(function(o){
-				if( state.mute ){
+				if( newState.mute ){
 					// @ts-ignore
 					o.element.volume = 0
 				} else {
@@ -343,6 +345,8 @@ const SND = {
 					o.element.volume = 1
 				}	
 			})
+
+		return newState
 	}
 }
 
@@ -371,8 +375,8 @@ const Keys = {
 		 */
 		// eslint-disable-next-line no-undef
 		window.onkeyup = (e) => {
-			if( e.keyCode == 77 /* M */){	
-				SND.setMute(state, !state.mute)
+			if( e.keyCode == 77 /* M */){
+				setState( state => SND.setMute(state, !state.mute) )
 			}
 			delete state.keys.DOWN[e.keyCode]
 		}
@@ -1653,7 +1657,7 @@ const Game = {
 	 */
 	initAudioResources(state){
 
-		SND.setMute(state, state.mute)
+		setState( state => SND.setMute(state, state.mute) )
 		
 		Object.keys(state.resources.snd)
 			.forEach(function(id){
